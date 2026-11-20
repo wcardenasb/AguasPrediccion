@@ -1,0 +1,20 @@
+AGUAS Y AGUAS - ACTUALIZACION WINDOWS
+
+Esta versión integra el ZIP nuevo (HTML, predictor y modelo global) con pywebview.
+No utiliza servidor_prediccion.py.
+
+INSTRUCCIONES
+1) Haga copia de seguridad de su carpeta actual.
+2) Descomprima este ZIP en una carpeta NUEVA.
+3) En PowerShell desde esa carpeta:
+   py -3.11 -m venv .venv
+   .\.venv\Scripts\python.exe -m pip install -r requirements.txt
+   .\.venv\Scripts\python.exe main.py
+4) Cargue el CSV y pruebe Sin test, 6 meses de test, zoom, CSV, PNG y PDF.
+5) Verifique el resultado del nuevo modelo frente a la versión anterior.
+
+AVISOS
+- El archivo joblib es un artefacto distinto al anterior. Su entrenamiento no se puede verificar sin sus registros o código de entrenamiento.
+- La función norm_etiqueta() del predictor nuevo considera equivalentes sectores como 4.10 y 4.1. Esto puede afectar las categorías. Es el comportamiento literal del código recibido y debe validarse antes de liberar el ejecutable.
+- El predictor usa hasta 18 meses como ventana aunque el CSV puede tener 24.
+- Para los gráficos PDF se utiliza el exportador vectorial rápido svg_pdf_rapido.py.

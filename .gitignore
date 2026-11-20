@@ -1,0 +1,34 @@
+
+# Entorno virtual
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Archivos generados por PyInstaller
+build/
+dist/
+*.spec
+
+# Instaladores generados
+instaladores/
+
+# Bases de datos y archivos de consumo
+*.csv
+*.xlsx
+*.xls
+*.pkl
+
+# Archivos temporales y registros
+*.log
+*.tmp
+*.bak
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Configuración local
+.env
+.env.*

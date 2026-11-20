@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Consumo de agua · Análisis por periodos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=Raleway:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand-blue:#2195d3;      /* azul institucional (aguasyaguas.com.co) */
+  --brand-navy:#0b3d7a;      /* azul profundo para títulos */
+  --brand-royal:#0943b5;
+  --brand-green:#93c01f;     /* verde institucional */
+  --surface:#ffffff;
+  --page:#f3f7fb;
+  --line:#dfe7ef;
+  --grid:#e9eef4;
+  --ink:#1f2a37;
+  --ink-2:#454545;
+  --ink-3:#727272;
+  --radius:12px;
+  --font-body:"Open Sans",Arial,sans-serif;
+  --font-head:"Raleway","Open Sans",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--page);color:var(--ink);font-family:var(--font-body);font-size:14px}
+button,input,select{font-family:inherit;font-size:inherit}
+h1,h2,h3{font-family:var(--font-head);margin:0}
+
+/* Header */
+.topbar{background:var(--surface);border-bottom:1px solid var(--line)}
+.topbar-inner{max-width:1440px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;gap:20px}
+.brand{display:flex;align-items:center;gap:14px;min-width:0}
+.brand img{height:46px;width:auto;display:block}
+.brand-fallback{display:none;align-items:center;gap:8px;font-family:var(--font-head);font-weight:800;color:var(--brand-navy);font-size:18px;line-height:1.05}
+.brand-fallback small{display:block;font-weight:600;color:var(--brand-blue);font-size:12px}
+.brand-sep{width:1px;height:36px;background:var(--line)}
+.app-title h1{font-size:19px;font-weight:700;color:var(--brand-navy)}
+.app-title p{margin:2px 0 0;color:var(--ink-3);font-size:12.5px}
+.topbar .spacer{flex:1}
+.stripe{height:5px;background:linear-gradient(90deg,var(--brand-royal) 0%,var(--brand-blue) 55%,var(--brand-green) 100%)}
+
+.btn{border:1px solid var(--brand-blue);background:var(--brand-blue);color:#fff;border-radius:999px;padding:8px 16px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.btn:hover{background:#1a82bb}
+.btn.ghost{background:#fff;color:var(--brand-blue)}
+.btn.ghost:hover{background:#eef7fc}
+.btn.small{padding:5px 11px;font-size:12.5px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+main{max-width:1440px;margin:0 auto;padding:22px 24px 40px}
+
+/* Dropzone */
+.drop{background:var(--surface);border:2px dashed #b9d6ea;border-radius:18px;padding:48px 24px;text-align:center;transition:.15s}
+.drop.over{border-color:var(--brand-blue);background:#f0f8fd}
+.drop h2{color:var(--brand-navy);font-size:24px;font-weight:700;margin-bottom:8px}
+.drop p{color:var(--ink-2);margin:6px auto;max-width:640px;line-height:1.5}
+.drop .cols{font-family:ui-monospace,Consolas,monospace;font-size:12px;color:var(--ink-3);background:var(--page);border-radius:8px;padding:10px 14px;display:inline-block;margin-top:14px;text-align:left;max-width:100%;overflow:auto}
+.drop-icon{width:64px;height:64px;margin:0 auto 14px}
+.progress{height:6px;background:var(--grid);border-radius:99px;overflow:hidden;max-width:420px;margin:18px auto 0;display:none}
+.progress > div{height:100%;width:0;background:linear-gradient(90deg,var(--brand-blue),var(--brand-green));transition:width .1s}
+.status{margin-top:10px;color:var(--ink-3);font-size:13px;min-height:18px}
+.error{color:#b42318;font-weight:600}
+
+/* KPIs */
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;margin-bottom:18px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;position:relative;overflow:hidden}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--brand-blue)}
+.kpi:nth-child(2)::before{background:var(--brand-green)}
+.kpi:nth-child(3)::before{background:var(--brand-royal)}
+.kpi .lbl{font-size:12px;color:var(--ink-3);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.kpi .val{font-family:var(--font-head);font-size:24px;font-weight:700;color:var(--brand-navy);margin-top:4px;font-variant-numeric:tabular-nums}
+.kpi .sub{font-size:12px;color:var(--ink-3);margin-top:2px}
+
+/* Controls */
+.controls{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 16px;display:flex;flex-wrap:wrap;align-items:center;gap:14px 22px;margin-bottom:18px}
+.ctl-label{font-size:12px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em;margin-right:8px}
+.seg{display:inline-flex;background:var(--page);border-radius:999px;padding:3px;gap:2px}
+.seg button{border:0;background:transparent;padding:7px 14px;border-radius:999px;color:var(--ink-2);font-weight:600;cursor:pointer}
+.seg button.on{background:var(--brand-blue);color:#fff}
+.seg button:disabled{opacity:.4;cursor:not-allowed}
+.check{display:inline-flex;align-items:center;gap:7px;color:var(--ink-2);cursor:pointer;user-select:none}
+.check input{accent-color:var(--brand-blue);width:16px;height:16px}
+
+/* Layout */
+.layout{display:grid;grid-template-columns:320px minmax(0,1fr);gap:18px;align-items:start}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
+.cats{position:sticky;top:12px;display:flex;flex-direction:column;max-height:calc(100vh - 24px)}
+.cats-head{padding:14px 14px 10px;border-bottom:1px solid var(--line)}
+.cats-head h3{font-size:15px;color:var(--brand-navy);font-weight:700}
+.cats-head .hint{font-size:12px;color:var(--ink-3);margin-top:3px}
+.cats-tools{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;align-items:center}
+.search{width:100%;margin-top:10px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;outline:none}
+.search:focus{border-color:var(--brand-blue);box-shadow:0 0 0 3px #2195d322}
+.cats select{border:1px solid var(--line);border-radius:8px;padding:4px 6px;color:var(--ink-2);background:#fff;margin-left:auto}
+.cat-list{overflow:auto;padding:6px 6px 10px;flex:1}
+.cat{display:grid;grid-template-columns:18px 12px minmax(0,1fr);gap:8px;align-items:center;padding:7px 8px;border-radius:8px;cursor:pointer}
+.cat:hover{background:#f2f8fc}
+.cat.disabled{opacity:.45;cursor:not-allowed}
+.cat input{accent-color:var(--brand-blue);width:16px;height:16px;margin:0;cursor:inherit}
+.sw{width:12px;height:12px;border-radius:3px;background:transparent;border:1px dashed #c8d2dc}
+.cat .name{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cat .meta{font-size:11.5px;color:var(--ink-3);display:flex;gap:8px;align-items:center;margin-top:3px}
+.cat .bar{flex:1;height:4px;background:var(--grid);border-radius:4px;overflow:hidden;min-width:40px}
+.cat .bar > i{display:block;height:100%;background:#9ec9e6;border-radius:4px}
+.limit{font-size:12px;color:var(--ink-3);padding:0 14px 10px}
+
+.charts{display:flex;flex-direction:column;gap:18px;min-width:0}
+.legend{display:flex;flex-wrap:wrap;gap:8px 16px;padding:12px 16px;align-items:center}
+.legend .item{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--ink);font-weight:600}
+.legend .key{width:20px;height:0;border-top:3px solid}
+.legend .item button{border:0;background:none;color:var(--ink-3);cursor:pointer;padding:0 2px;font-size:14px;line-height:1}
+.legend .item button:hover{color:#b42318}
+.legend .empty{color:var(--ink-3)}
+.chart-card{padding:14px 16px 8px}
+.chart-head{display:flex;align-items:flex-start;gap:12px}
+.chart-head h2{font-size:17px;color:var(--brand-navy);font-weight:700}
+.chart-head p{margin:3px 0 0;font-size:12.5px;color:var(--ink-3)}
+.chart-head .spacer{flex:1}
+.chart{position:relative;margin-top:6px}
+.chart svg{display:block;width:100%;overflow:visible}
+.zoom-ctl{display:inline-flex;border:1px solid var(--brand-blue);border-radius:999px;overflow:hidden;margin-right:8px;height:30px}
+.zoom-ctl button{border:0;background:#fff;color:var(--brand-blue);font-weight:700;padding:0 11px;cursor:pointer;font-size:13px;line-height:28px}
+.zoom-ctl button+button{border-left:1px solid #cfe5f3}
+.zoom-ctl button:hover{background:#eef7fc}
+.zoom-ctl button.on{background:var(--brand-blue);color:#fff}
+.zoom-hint{font-size:11.5px;color:var(--ink-3);margin:2px 0 6px}
+.zoom-flag{display:inline-block;margin-left:8px;font-size:11px;font-weight:700;color:#0943b5;background:#e7f0fb;border-radius:999px;padding:2px 8px;vertical-align:middle}
+.tip{position:absolute;pointer-events:none;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px #0b3d7a22;padding:10px 12px;font-size:12.5px;min-width:190px;opacity:0;transition:opacity .08s;z-index:5}
+.tip .t{font-weight:700;color:var(--brand-navy);margin-bottom:6px;font-family:var(--font-head)}
+.tip .r{display:grid;grid-template-columns:14px minmax(0,1fr) auto;gap:8px;align-items:center;padding:2px 0}
+.tip .r .k{width:12px;height:3px;border-radius:2px}
+.tip .r .n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink-2);max-width:220px}
+.tip .r .v{font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink)}
+.tip .r .c{grid-column:2 / 4;font-size:11px;color:var(--ink-3);margin-top:-2px}
+
+details.table-wrap{padding:0}
+details.table-wrap summary{padding:14px 16px;cursor:pointer;font-family:var(--font-head);font-weight:700;color:var(--brand-navy);display:flex;align-items:center;gap:10px}
+details.table-wrap summary::-webkit-details-marker{display:none}
+details.table-wrap summary::before{content:"▸";color:var(--brand-blue);transition:.15s}
+details[open].table-wrap summary::before{transform:rotate(90deg)}
+.table-scroll{overflow:auto;max-height:480px;border-top:1px solid var(--line)}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th,td{padding:7px 10px;text-align:right;border-bottom:1px solid var(--grid);white-space:nowrap;font-variant-numeric:tabular-nums}
+th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:#fff}
+thead th{position:sticky;top:0;background:#f7fafd;color:var(--ink-2);font-weight:700;z-index:1}
+thead th:first-child{z-index:2;background:#f7fafd}
+tr.current td{background:#f2f9ee}
+tr.fc td{background:#fafcf5;color:var(--ink-2);font-style:italic}
+tr.fc td:first-child{background:#fafcf5}
+tr.sep td{border-top:2px solid var(--brand-green)}
+.note{font-size:12px;color:var(--ink-3);line-height:1.5;margin-top:4px}
+
+/* Predicción */
+.fc-bar{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--brand-green);border-radius:var(--radius);padding:10px 16px;display:flex;flex-wrap:wrap;align-items:center;gap:10px 20px;margin:-6px 0 18px}
+.fc-bar select,.fc-bar input[type=text]{border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:#fff;color:var(--ink)}
+.fc-bar input[type=text]{width:260px}
+.fc-bar .lbl2{font-size:13px;color:var(--ink-2);display:inline-flex;align-items:center;gap:8px}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700;background:#eef6dc;color:#4d6a0b}
+.pill.warn{background:#fff3df;color:#8a5300}
+.pill.err{background:#fde8e6;color:#b42318}
+.fc-status{font-size:12.5px;color:var(--ink-3)}
+.fc-bar select option:disabled{color:#bbb}
+tr.test td{background:#fff8ee}
+tr.test td:first-child{background:#fff8ee}
+.test-card{padding:14px 16px}
+.test-card h2{font-size:16px;color:var(--brand-navy);font-weight:700}
+.test-card p{margin:3px 0 10px;font-size:12.5px;color:var(--ink-3)}
+.test-card table td,.test-card table th{padding:7px 10px}
+.test-card .sw2{display:inline-block;width:12px;height:3px;border-radius:2px;margin-right:8px;vertical-align:middle}
+.good{color:#1a7f4b;font-weight:700}.bad{color:#b42318;font-weight:700}
+.kpi.test::before{background:#eb6834}
+.test-sum{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:4px 0 14px}
+.test-sum .tile{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:#fffaf3;position:relative;overflow:hidden}
+.test-sum .tile::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:#eb6834}
+.test-sum .tile.main{background:#fff4e5}
+.test-sum .lbl{font-size:11.5px;color:var(--ink-3);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.test-sum .val{font-family:var(--font-head);font-size:26px;font-weight:800;color:var(--brand-navy);margin-top:2px;font-variant-numeric:tabular-nums}
+.test-sum .sub{font-size:12px;color:var(--ink-3);margin-top:2px}
+tr.avg-row td{font-weight:700;border-top:2px solid var(--line);background:#fafbfc}
+@media (max-width:1100px){.test-sum{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.footer{margin-top:26px;font-size:12px;color:var(--ink-3);text-align:center}
+.hidden{display:none !important}
+
+@media (max-width:1100px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:980px){
+  .layout{grid-template-columns:1fr}
+  .cats{position:static;max-height:420px}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .topbar-inner{flex-wrap:wrap}
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <img id="logo" src="https://www.aguasyaguas.com.co/images/logos/logotipo_aguas.png" alt="Aguas y Aguas de Pereira"
+           onerror="this.style.display='none';document.getElementById('logoFallback').style.display='flex'">
+      <div id="logoFallback" class="brand-fallback">
+        <svg width="30" height="38" viewBox="0 0 30 38" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2195d3"/><stop offset="1" stop-color="#0943b5"/></linearGradient></defs><path d="M15 1C15 1 2 17 2 25a13 13 0 0 0 26 0C28 17 15 1 15 1z" fill="url(#g)"/><path d="M8 26c1 4 4 6 7 6" stroke="#93c01f" stroke-width="3" fill="none" stroke-linecap="round"/></svg>
+        <div>Aguas y Aguas<small>de Pereira</small></div>
+      </div>
+      <div class="brand-sep"></div>
+      <div class="app-title">
+        <h1>Análisis de consumo de agua</h1>
+        <p id="fileInfo">Carga un archivo de consumos para comenzar</p>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn ghost hidden" id="btnReload" type="button">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg>
+      Cargar otro archivo
+    </button>
+    <input type="file" id="fileInput" accept=".csv,.txt,text/csv" hidden>
+  </div>
+  <div class="stripe"></div>
+</header>
+
+<main>
+  <!-- Estado vacío / carga -->
+  <section id="dropzone" class="drop">
+    <svg class="drop-icon" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 6S12 30 12 42a20 20 0 0 0 40 0C52 30 32 6 32 6z" fill="#e3f1fa" stroke="#2195d3" stroke-width="3"/><path d="M22 43c1.5 6 6 9 11 9" stroke="#93c01f" stroke-width="4" fill="none" stroke-linecap="round"/></svg>
+    <h2>Arrastra aquí el archivo de consumos</h2>
+    <p>o <button class="btn small" id="btnPick" type="button">selecciona un archivo CSV</button></p>
+    <p>Los datos y las predicciones se procesan localmente en este equipo; no se envían a servidores externos.</p>
+    <div class="cols">"MATRICULA";"CICLO";"USO_ESTRATO";"PERIODO_CONSULTA";"COMUNA";"GRUPO_TARIFARIO";"SECTOR_HIDRAULICO";<br>"CONSUMO_ACTUAL";"CONSUMO_PROMEDIO";"MES_ACTUAL";"MES_1";"MES_2"; … ;"MES_17"</div>
+    <div class="progress" id="progress"><div></div></div>
+    <div class="status" id="status"></div>
+  </section>
+
+  <!-- Dashboard -->
+  <section id="dash" class="hidden">
+    <div class="kpis" id="kpis"></div>
+
+    <div class="controls">
+      <div><span class="ctl-label">Agrupar por</span><span class="seg" id="groupSeg"></span></div>
+      <label class="check"><input type="checkbox" id="chkAll"> Mostrar total general</label>
+      <label class="check"><input type="checkbox" id="chkOther"> Sumar no seleccionadas como «Otras»</label>
+    </div>
+
+    <div class="fc-bar" id="fcBar">
+      <label class="check"><input type="checkbox" id="fcOn" checked> <b>Predicción</b></label>
+      <span class="lbl2" title="Meses finales del archivo que se reservan para comparar predicción vs. real">Meses de test
+        <select id="fcTest"></select>
+      </span>
+      <span class="lbl2" title="Meses a predecir contados desde el corte (último mes del predictor)">Horizonte desde el corte
+        <select id="fcH"><option value="6">6 meses</option><option value="12">12 meses</option><option value="18" selected>18 meses</option><option value="24">24 meses</option></select>
+      </span>
+      <span class="lbl2">Modelo <b>Global entrenado · local</b><select id="fcSrc" class="hidden" aria-hidden="true"></select></span>
+      <span class="lbl2 hidden" id="fcUrlWrap">URL <input type="text" id="fcUrl" value="http://localhost:8000/predict" spellcheck="false"></span>
+      <label class="check"><input type="checkbox" id="fcBand" checked> Intervalo 80 %</label>
+      <span class="pill warn" id="fcBadge">DUMMY</span>
+      <span class="fc-status" id="fcStatus"></span>
+    </div>
+
+    <div class="layout">
+      <aside class="panel cats" id="catsPanel">
+        <div class="cats-head">
+          <h3 id="catsTitle">Categorías</h3>
+          <div class="hint" id="catsHint"></div>
+          <input class="search" id="catSearch" type="search" placeholder="Buscar categoría…">
+          <div class="cats-tools">
+            <button class="btn ghost small" id="btnTop" type="button">Top 5</button>
+            <button class="btn ghost small" id="btnNone" type="button">Limpiar</button>
+            <select id="catSort" title="Ordenar">
+              <option value="cons">Por consumo</option>
+              <option value="name">Por nombre</option>
+              <option value="n">Por suscriptores</option>
+            </select>
+          </div>
+        </div>
+        <div class="cat-list" id="catList"></div>
+        <div class="limit" id="catLimit"></div>
+      </aside>
+
+      <div class="charts">
+        <div class="panel legend" id="legend"></div>
+        <div class="panel test-card hidden" id="testPanel"></div>
+
+        <div class="panel chart-card">
+          <div class="chart-head">
+            <div>
+              <h2>Consumo total por mes</h2>
+              <p>Suma de los consumos de todos los suscriptores de cada categoría · <span class="unit"></span></p>
+            </div>
+            <div class="spacer"></div>
+            <div class="zoom-ctl" data-chart="chartTotal" role="group" aria-label="Zoom vertical">
+              <button type="button" data-z="out" title="Alejar (eje Y)">−</button>
+              <button type="button" data-z="in" title="Acercar (eje Y)">+</button>
+              <button type="button" data-z="fit" title="Ajustar el eje Y al rango de los datos (sin empezar en 0)">Ajustar Y</button>
+              <button type="button" data-z="reset" title="Restablecer el eje Y">↺</button>
+            </div>
+            <button class="btn ghost small" data-png="chartTotal" type="button">PNG</button>
+            <button class="btn ghost small" data-pdf="chartTotal" type="button">PDF</button>
+          </div>
+          <div class="chart" id="chartTotal"></div>
+          <div class="zoom-hint">Zoom vertical: arrastra sobre el eje Y para elegir un rango · Ctrl/⌘ + rueda (o pellizca) sobre la gráfica · doble clic para restablecer</div>
+        </div>
+
+        <div class="panel chart-card">
+          <div class="chart-head">
+            <div>
+              <h2>Consumo promedio por suscriptor</h2>
+              <p>Promedio de los suscriptores con dato en el mes · <span class="unit"></span></p>
+            </div>
+            <div class="spacer"></div>
+            <div class="zoom-ctl" data-chart="chartAvg" role="group" aria-label="Zoom vertical">
+              <button type="button" data-z="out" title="Alejar (eje Y)">−</button>
+              <button type="button" data-z="in" title="Acercar (eje Y)">+</button>
+              <button type="button" data-z="fit" title="Ajustar el eje Y al rango de los datos (sin empezar en 0)">Ajustar Y</button>
+              <button type="button" data-z="reset" title="Restablecer el eje Y">↺</button>
+            </div>
+            <button class="btn ghost small" data-png="chartAvg" type="button">PNG</button>
+            <button class="btn ghost small" data-pdf="chartAvg" type="button">PDF</button>
+          </div>
+          <div class="chart" id="chartAvg"></div>
+          <div class="zoom-hint">Zoom vertical: arrastra sobre el eje Y para elegir un rango · Ctrl/⌘ + rueda (o pellizca) sobre la gráfica · doble clic para restablecer</div>
+        </div>
+
+        <details class="panel table-wrap" id="tableWrap">
+          <summary>Tabla de datos <span class="spacer" style="flex:1"></span><button class="btn ghost small" id="btnCsv" type="button">Descargar CSV</button></summary>
+          <div class="table-scroll" id="tableBox"></div>
+        </details>
+
+        <div class="note" id="unitNote"></div>
+      </div>
+    </div>
+  </section>
+  <div class="footer">Herramienta de análisis · Los datos se procesan localmente en este equipo</div>
+</main>
+
+<script>
+"use strict";
+/* ---------- Configuración ---------- */
+// Paleta categórica (orden fijo, validada para daltonismo; ranura 1 = azul institucional)
+const PALETTE = ["#1d7fc2","#eb6834","#1baf7a","#eda100","#e87ba4","#5f8f0f","#6250d6","#e34948"];
+const MAX_SEL = PALETTE.length;
+const COLOR_ALL = "#0b3d7a";   // total general (azul profundo)
+const COLOR_OTHER = "#8a94a0"; // otras (gris neutro)
+const GROUPS = [
+  {key:"__TOTAL__", label:"Total"},
+  {key:"USO_ESTRATO", label:"Uso / estrato"},
+  {key:"COMUNA", label:"Comuna"},
+  {key:"SECTOR_HIDRAULICO", label:"Sector hidráulico"}
+];
+const UNIT = "m³/día";
+const MESES = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+const MESES_L = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+
+let DATA = null;
+const state = { group:"USO_ESTRATO", sel:{}, slots:{}, showAll:false, showOther:false, cache:{}, search:"", sort:"cons" };
+
+/* ---------- Utilidades ---------- */
+const $ = id => document.getElementById(id);
+const monthLabel = (idx, long) => { const y=Math.floor(idx/12), m=idx%12; return long ? `${MESES_L[m]} ${y}` : `${MESES[m]} ${String(y).slice(2)}`; };
+const nfCache = {};
+function fmt(v, digits){
+  if (v==null || !isFinite(v)) return "—";
+  let d = digits;
+  if (d==null){ const a=Math.abs(v); d = a>=1000?0 : a>=100?1 : a>=1?2 : 3; }
+  const k = "d"+d; if(!nfCache[k]) nfCache[k]=new Intl.NumberFormat("es-CO",{minimumFractionDigits:0,maximumFractionDigits:d});
+  return nfCache[k].format(v);
+}
+function fmtTick(v, step){                       // decimales según el paso de la escala
+  const a=Math.abs(v);
+  if (step>=1 && a>=1e6) return fmt(v/1e6, step>=1e5?1:2)+" M";
+  if (step>=1000 && a>=1e4) return fmt(v/1e3, step>=1e4?0:1)+" mil";
+  const d=Math.max(0, Math.min(5, -Math.floor(Math.log10(step)+1e-9) + (/[^0]5|25/.test(String(step))?1:0)));
+  return new Intl.NumberFormat("es-CO",{minimumFractionDigits:d,maximumFractionDigits:d}).format(v);
+}
+/* Zoom vertical por gráfica: YZ = rango fijado por el usuario; FIT = eje ajustado a los datos; DOM = dominio dibujado */
+const YZ={chartTotal:null, chartAvg:null}, FIT={chartTotal:false, chartAvg:false}, DOM={};
+const METRICA={chartTotal:"total", chartAvg:"avg"};
+function redibujar(boxId){ drawChart(boxId, CURRENT, METRICA[boxId]); actualizarZoomUI(boxId); }
+function fijarZoom(boxId, min, max){
+  if (!(max>min)) return;
+  min=Math.max(0,min); if (max-min < 1e-9) return;
+  YZ[boxId]={min,max}; redibujar(boxId);
+}
+function restablecerZoom(boxId){ YZ[boxId]=null; FIT[boxId]=false; redibujar(boxId); }
+function actualizarZoomUI(boxId){
+  const c=document.querySelector(`.zoom-ctl[data-chart="${boxId}"]`); if(!c) return;
+  c.querySelector('[data-z="fit"]').classList.toggle("on", FIT[boxId] && !YZ[boxId]);
+  c.querySelector('[data-z="reset"]').disabled = !YZ[boxId] && !FIT[boxId];
+}
+function fmtAxis(v){
+  const a=Math.abs(v);
+  if (a>=1e6) return fmt(v/1e6,1)+" M";
+  if (a>=1e4) return fmt(v/1e3,0)+" mil";
+  return fmt(v, a>=100?0: a>=10?1: a>=1?1:2);
+}
+function esc(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+const tick = () => new Promise(r => setTimeout(r, 0));
+
+/* ---------- Lectura del archivo ---------- */
+async function readText(file){
+  const buf = await file.arrayBuffer();
+  let t = new TextDecoder("utf-8").decode(buf);
+  if (t.includes("�")) t = new TextDecoder("windows-1252").decode(buf); // archivos exportados en Latin-1
+  if (t.charCodeAt(0) === 0xFEFF) t = t.slice(1);
+  return t;
+}
+function splitLine(line, d){
+  if (line.indexOf('"') < 0) return line.split(d);
+  const out=[]; let cur="", q=false;
+  for (let i=0;i<line.length;i++){
+    const ch=line[i];
+    if (q){ if (ch==='"'){ if(line[i+1]==='"'){cur+='"';i++;} else q=false; } else cur+=ch; }
+    else if (ch==='"') q=true;
+    else if (ch===d){ out.push(cur); cur=""; }
+    else cur+=ch;
+  }
+  out.push(cur); return out;
+}
+function parseNum(s){
+  if (s==null) return NaN;
+  s = s.trim(); if (!s) return NaN;
+  if (s.indexOf(",")>=0){ s = s.indexOf(".")>=0 ? s.replace(/\./g,"").replace(",",".") : s.replace(",","."); }
+  const v = +s; return isFinite(v) ? v : NaN;
+}
+function parsePeriod(s){
+  if (!s) return null; s=s.trim();
+  let m = s.match(/^(\d{4})\D?(\d{1,2})/); if (m){ const y=+m[1], mo=+m[2]; if(mo>=1&&mo<=12) return y*12+mo-1; }
+  m = s.match(/^(\d{1,2})\D(\d{4})/); if (m){ const y=+m[2], mo=+m[1]; if(mo>=1&&mo<=12) return y*12+mo-1; }
+  return null;
+}
+
+async function loadFile(file){
+  const st=$("status"), pg=$("progress"), bar=pg.firstElementChild;
+  st.className="status"; st.textContent="Leyendo «"+file.name+"»…"; pg.style.display="block"; bar.style.width="3%";
+  $("dropzone").classList.remove("hidden"); $("dash").classList.add("hidden");
+  await tick();
+  try{
+    const text = await readText(file);
+    const lines = text.split(/\r?\n/);
+    while (lines.length && !lines[lines.length-1].trim()) lines.pop();
+    if (lines.length < 2) throw new Error("El archivo no tiene filas de datos.");
+    const head = lines[0];
+    const counts = {";":(head.match(/;/g)||[]).length, ",":(head.match(/,/g)||[]).length, "\t":(head.match(/\t/g)||[]).length};
+    const delim = Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0];
+    const cols = splitLine(head, delim).map(c=>c.replace(/^﻿/,"").trim().toUpperCase().replace(/\s+/g,"_"));
+    const ci = n => cols.indexOf(n);
+    const iPer = ci("PERIODO_CONSULTA");
+    if (iPer<0) throw new Error("No se encontró la columna PERIODO_CONSULTA.");
+    const mesCols=[];
+    cols.forEach((c,i)=>{ if(c==="MES_ACTUAL") mesCols.push([0,i]); else { const m=c.match(/^MES_(\d+)$/); if(m) mesCols.push([+m[1],i]); } });
+    if (!mesCols.some(m=>m[0]===0)) throw new Error("No se encontró la columna MES_ACTUAL.");
+    const K = Math.max(...mesCols.map(m=>m[0]))+1;
+    const groupIdx = {}; GROUPS.forEach(g=>{ if(g.key!=="__TOTAL__") groupIdx[g.key]=ci(g.key); });
+    const iMat = ci("MATRICULA");
+
+    const N = lines.length-1;
+    const vals = new Float32Array(N*K).fill(NaN);
+    const base = new Int32Array(N);
+    const groups = {};
+    for (const k in groupIdx) if (groupIdx[k]>=0) groups[k] = {names:[], map:new Map(), codes:new Uint16Array(N)};
+    const periods = new Map(); const mats = new Set();
+    // celdas base = combinación USO_ESTRATO × COMUNA × SECTOR_HIDRAULICO (nivel al que se predice)
+    const cellMap=new Map(), cellKeys=[], cellCode=new Uint32Array(N);
+    let n=0, skipped=0;
+    const CH=15000;
+    for (let li=1; li<lines.length; li++){
+      const line = lines[li];
+      if (!line) continue;
+      const f = splitLine(line, delim);
+      const p = parsePeriod((f[iPer]||"").replace(/"/g,""));
+      if (p==null){ skipped++; continue; }
+      base[n]=p; periods.set(p,(periods.get(p)||0)+1);
+      const off=n*K;
+      for (const [k,i] of mesCols) vals[off+k]=parseNum(f[i]);
+      for (const key in groups){
+        const g=groups[key]; let v=(f[groupIdx[key]]||"").trim(); if(!v) v="(Sin dato)";
+        let c=g.map.get(v); if(c===undefined){ c=g.names.length; g.names.push(v); g.map.set(v,c); }
+        g.codes[n]=c;
+      }
+      let ck=""; for (const key in groups) ck+=groups[key].codes[n]+"|";
+      let cc=cellMap.get(ck); if(cc===undefined){ cc=cellKeys.length; cellKeys.push(ck); cellMap.set(ck,cc); }
+      cellCode[n]=cc;
+      if (iMat>=0) mats.add(f[iMat]);
+      n++;
+      if (li%CH===0){ bar.style.width=(3+92*li/lines.length).toFixed(1)+"%"; st.textContent=`Procesando ${fmt(li,0)} de ${fmt(lines.length-1,0)} filas…`; await tick(); }
+    }
+    if (!n) throw new Error("Ninguna fila tiene un PERIODO_CONSULTA válido (formato esperado AAAA-MM).");
+    let pMin=Infinity,pMax=-Infinity; for (const p of periods.keys()){ if(p<pMin)pMin=p; if(p>pMax)pMax=p; }
+    const tMin=pMin-(K-1), tMax=pMax;
+    DATA = { file:file.name, n, K, vals:vals.subarray(0,n*K), base:base.subarray(0,n), groups, tMin, tMax, T:tMax-tMin+1,
+             periods, pMax, skipped, uniqueMat: iMat>=0 ? mats.size : null };
+    // índice de celdas: código de categoría de cada celda en cada agrupación + listas de celdas por categoría
+    const gkeys=Object.keys(groups), nCells=cellKeys.length, cg={}, lists={};
+    gkeys.forEach(k=>{ cg[k]=new Uint16Array(nCells); });
+    cellKeys.forEach((ck,ci)=>{ const parts=ck.split("|"); gkeys.forEach((k,j)=>{ cg[k][ci]=+parts[j]; }); });
+    gkeys.forEach(k=>{ const nC=groups[k].names.length, tmp=Array.from({length:nC},()=>[]);
+      for (let ci=0;ci<nCells;ci++) tmp[cg[k][ci]].push(ci);
+      lists[k]=tmp.map(a=>Int32Array.from(a)); });
+    DATA.cells={ n:nCells, codes:cellCode.subarray(0,n), group:cg, lists, keys:gkeys };
+    bar.style.width="100%";
+    state.cache={}; state.sel={}; state.slots={}; state.init={};
+    if (!groups[state.group]) state.group = Object.keys(groups)[0] || "__TOTAL__";
+    st.textContent="";
+    pg.style.display="none";
+    showDashboard();
+  }catch(e){
+    console.error(e);
+    pg.style.display="none";
+    st.className="status error"; st.textContent="No se pudo leer el archivo: "+e.message;
+  }
+}
+
+/* ---------- Agregación ---------- */
+function aggregate(key){
+  if (state.cache[key]) return state.cache[key];
+  const {n,K,vals,base,tMin,T} = DATA;
+  const g = key==="__TOTAL__" ? null : key==="__CELL__" ? {names:null, codes:DATA.cells.codes, n:DATA.cells.n} : DATA.groups[key];
+  const nC = g ? (g.names ? g.names.length : g.n) : 1;
+  const sum=new Float64Array(nC*T), cnt=new Uint32Array(nC*T), rows=new Uint32Array(nC);
+  const codes = g ? g.codes : null;
+  for (let i=0;i<n;i++){
+    const c = codes ? codes[i] : 0, off=c*T, b=base[i]-tMin, vo=i*K;
+    rows[c]++;
+    for (let k=0;k<K;k++){ const v=vals[vo+k]; if(v===v){ const t=off+b-k; sum[t]+=v; cnt[t]++; } }
+  }
+  const tot=new Float64Array(T), totc=new Uint32Array(T);
+  for (let c=0;c<nC;c++) for (let t=0;t<T;t++){ tot[t]+=sum[c*T+t]; totc[t]+=cnt[c*T+t]; }
+  // consumo en el último mes (para ordenar y para la barra de participación)
+  const last=T-1, latest=new Float64Array(nC);
+  for (let c=0;c<nC;c++) latest[c]=sum[c*T+last];
+  const res = {names: g?g.names:["Todos los suscriptores"], nC, sum, cnt, rows, tot, totc, latest};
+  state.cache[key]=res; return res;
+}
+
+/* ---------- Selección y colores (el color sigue a la categoría) ---------- */
+function selOf(key){ if(!state.sel[key]) state.sel[key]=[]; if(!state.slots[key]) state.slots[key]={}; return state.sel[key]; }
+function addSel(key,c){
+  const s=selOf(key); if (s.includes(c) || s.length>=MAX_SEL) return;
+  const used=new Set(Object.values(state.slots[key]));
+  let slot=0; while(used.has(slot)) slot++;
+  state.slots[key][c]=slot; s.push(c);
+}
+function removeSel(key,c){ const s=selOf(key); const i=s.indexOf(c); if(i>=0){ s.splice(i,1); delete state.slots[key][c]; } }
+function defaultSel(key){
+  const a=aggregate(key); selOf(key);
+  state.init=state.init||{};
+  if (state.init[key]) return; state.init[key]=true;
+  const order=[...Array(a.nC).keys()].sort((x,y)=>a.latest[y]-a.latest[x]);
+  order.slice(0,5).forEach(c=>addSel(key,c));
+}
+
+/* ---------- Series ---------- */
+function buildSeries(){
+  const key=state.group, a=aggregate(key), T=DATA.T, out=[];
+  const mk=(name,color,sum,cnt,kind,rows)=>{
+    const s=new Array(T), m=new Array(T);
+    for(let t=0;t<T;t++){ const c=cnt[t]; s[t]= c? sum[t] : null; m[t]= c? sum[t]/c : null; }
+    return {name,color,total:s,avg:m,cnt:Array.from(cnt),kind,rows};
+  };
+  if (key==="__TOTAL__"){
+    out.push(mk("Todos los suscriptores", PALETTE[0], a.tot, a.totc, "cat", a.rows[0]));
+    out[0].cells=null;   // null = todas las celdas
+    return out;
+  }
+  const sel=selOf(key);
+  const ordered=[...sel].sort((x,y)=>state.slots[key][x]-state.slots[key][y]);
+  for (const c of ordered){
+    out.push(mk(a.names[c], PALETTE[state.slots[key][c]], a.sum.subarray(c*T,(c+1)*T), a.cnt.subarray(c*T,(c+1)*T), "cat", a.rows[c]));
+    out[out.length-1].code=c; out[out.length-1].cells=DATA.cells.lists[key][c];
+  }
+  if (state.showOther){
+    const os=Float64Array.from(a.tot), oc=Uint32Array.from(a.totc); let rows=DATA.n;
+    for (const c of sel){ for(let t=0;t<T;t++){ os[t]-=a.sum[c*T+t]; oc[t]-=a.cnt[c*T+t]; } rows-=a.rows[c]; }
+    if (rows>0){
+      const ss=new Set(sel), cg=DATA.cells.group[key], oc2=[];
+      for (let ci=0;ci<DATA.cells.n;ci++) if(!ss.has(cg[ci])) oc2.push(ci);
+      out.push(mk("Otras (no seleccionadas)", COLOR_OTHER, os, oc, "other", rows)); out[out.length-1].cells=Int32Array.from(oc2);
+    }
+  }
+  if (state.showAll){ out.push(mk("Total general", COLOR_ALL, a.tot, a.totc, "all", DATA.n)); out[out.length-1].cells=null; }
+  return out;
+}
+
+/* =====================================================================
+   PREDICCIÓN — modelo global por celda + agregación ascendente (bottom-up)
+   ---------------------------------------------------------------------
+   La app agrega el CSV en CELDAS BASE = USO_ESTRATO × COMUNA × SECTOR_HIDRAULICO,
+   pide al modelo la predicción de TODAS las celdas una sola vez y luego suma
+   las celdas de cada serie visible (categoría, «Otras», total). Así las
+   predicciones cuadran en cualquier agrupación.
+
+   SOLICITUD {
+     horizon: 18,                     // meses a predecir
+     level: ["USO_ESTRATO","COMUNA","SECTOR_HIDRAULICO"],
+     history_start:"2025-01", history_end:"2026-06", forecast_start:"2026-07",
+     unit:"m³/día",
+     series:[ { id:"c0", uso_estrato:"RESID--EST 2", comuna:"CENTRO", sector_hidraulico:"2.03",
+                n_registros: 812,                 // filas del CSV en la celda
+                total:[T],                        // consumo total mensual (null = sin dato)
+                n_matriculas:[T] } ]              // suscriptores (matrículas) con dato cada mes
+   }
+   RESPUESTA {
+     model:"nombre",
+     series:[ { id:"c0",
+                total:{ mean:[h],                 // obligatorio
+                        samples:[[h],…],          // opcional: S trayectorias simuladas (recomendado)
+                        lower:[h], upper:[h] },   // opcional: intervalo 80 % de la celda
+                n_matriculas:{ mean:[h] } } ]     // opcional (si falta: se mantiene el último mes)
+   }
+   Intervalos de las series agregadas: si todas las celdas traen `samples` (mismo S), se
+   suman las trayectorias y se toman los cuantiles 10–90 %. Si solo traen lower/upper, se
+   aproxima suponiendo independencia entre celdas (tiende a quedar estrecho).
+
+   Modelo en el navegador:  registrarModelo("id","Etiqueta", async solicitud => respuesta)
+   Modelo en Python:        opción «API REST» (ver servidor_prediccion.py)
+   ===================================================================== */
+const FORECASTERS = {};
+function registrarModelo(id, label, predict, opts={}){ FORECASTERS[id]={label, predict, dummy:!!opts.dummy, needsUrl:!!opts.needsUrl}; if(DATA) renderFcSources(); }
+window.registrarModelo = registrarModelo;
+
+const FC = { on:true, h:18, band:true, source:"local", url:"", test:6 };
+const PRED_L = 18;                                   // meses de historia que recibe el modelo (predictor)
+// índice t del corte (último mes del predictor) y del primer mes de la ventana predictora
+const corteT = () => DATA.T - 1 - FC.test;
+const inicioPredT = () => Math.max(0, corteT() - PRED_L + 1);
+
+let CELLFC=null, PENDING=null;
+const ym = idx => `${Math.floor(idx/12)}-${String(idx%12+1).padStart(2,"0")}`;
+
+/* ---- Dummy: estacional ingenuo × crecimiento interanual, con trayectorias simuladas ---- */
+function mulberry32(a){ return ()=>{ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function dummyCell(y, H, S, rnd){
+  const v=y.map(x=>x==null?NaN:x), n=v.length;
+  const mean=a=>{const f=a.filter(Number.isFinite); return f.length? f.reduce((s,x)=>s+x,0)/f.length : NaN;};
+  let last=0; for(let i=n-1;i>=0;i--) if(Number.isFinite(v[i])){ last=v[i]; break; }
+  let g=1;
+  if (n>=18){ const r=mean(v.slice(n-6))/mean(v.slice(n-18,n-12)); if(Number.isFinite(r)&&r>0) g=Math.min(1.25,Math.max(0.8,r)); }
+  const res=[]; for(let t=12;t<n;t++) if(Number.isFinite(v[t])&&Number.isFinite(v[t-12])) res.push(v[t]-v[t-12]*g);
+  const sigma = res.length>=3 ? Math.sqrt(res.reduce((s,r)=>s+r*r,0)/res.length) : Math.abs(last)*0.05;
+  const m=[], sd=[];
+  for (let h=1;h<=H;h++){
+    let b;
+    if (n>=12){ const s=v[n-12+((h-1)%12)]; b=(Number.isFinite(s)?s:last)*Math.pow(g,Math.ceil(h/12)); } else b=last;
+    m.push(Math.max(0,b)); sd.push(sigma*(n>=12? Math.sqrt(Math.ceil(h/12)) : Math.sqrt(h)));
+  }
+  const samples=[];
+  for (let s=0;s<S;s++){
+    const p=new Array(H);
+    for (let h=0;h<H;h++){ const z=Math.sqrt(-2*Math.log(rnd()+1e-12))*Math.cos(2*Math.PI*rnd()); p[h]=m[h]+sd[h]*z; }   // sin recorte por celda
+    samples.push(p);
+  }
+  return {mean:m, samples};
+}
+registrarModelo("dummy","Dummy · estacional ingenuo", async req => {
+  const H=req.horizon, nC=req.series.length;
+  const S=Math.max(20, Math.min(100, Math.floor(3e6/Math.max(1,nC*H))));   // limita memoria
+  const rnd=mulberry32(12345);
+  return { model:"dummy-estacional-ingenuo",
+    series: req.series.map(c=>{
+      let lastN=0; for(let t=c.n_matriculas.length-1;t>=0;t--) if(c.n_matriculas[t]>0){ lastN=c.n_matriculas[t]; break; }
+      return { id:c.id, total:dummyCell(c.total,H,S,rnd), n_matriculas:{mean:new Array(H).fill(lastN)} };
+    }) };
+}, {dummy:true});
+
+registrarModelo("local", "Modelo global entrenado · local", async req => {
+  if (!window.pywebview?.api?.predecir) throw new Error("El modelo local requiere iniciar la aplicación desde main.py.");
+  return await window.pywebview.api.predecir(req);
+});
+
+/* ---- Solicitud por celda ---- */
+function cellRequest(){
+  const A=aggregate("__CELL__"), C=DATA.cells, T=DATA.T;
+  const label=(k,ci)=> DATA.groups[k] ? DATA.groups[k].names[C.group[k][ci]] : null;
+  const o=corteT(), p0=inicioPredT(), L=o-p0+1;          // solo la ventana predictora: los meses de test NO se envían
+  const series=new Array(C.n);
+  for (let ci=0;ci<C.n;ci++){
+    const tot=new Array(L), nm=new Array(L);
+    for (let j=0;j<L;j++){ const t=p0+j, c=A.cnt[ci*T+t]; nm[j]=c; tot[j]= c? +A.sum[ci*T+t].toFixed(6) : null; }
+    series[ci]={ id:"c"+ci, uso_estrato:label("USO_ESTRATO",ci), comuna:label("COMUNA",ci), sector_hidraulico:label("SECTOR_HIDRAULICO",ci),
+                 n_registros:A.rows[ci], total:tot, n_matriculas:nm };
+  }
+  return { horizon:FC.h, level:C.keys, history_start:ym(DATA.tMin+p0), history_end:ym(DATA.tMin+o), forecast_start:ym(DATA.tMin+o+1), unit:UNIT, series };
+}
+
+/* ---- Respuesta → arreglos planos por celda ---- */
+function parseCellResponse(resp, key){
+  const H=FC.h, C=DATA.cells, A=aggregate("__CELL__"), T=DATA.T;
+  const byId=new Map((resp && resp.series || []).map(s=>[String(s.id),s]));
+  const mean=new Float64Array(C.n*H), cnt=new Float64Array(C.n*H);
+  let S=null, lo=null, hi=null, haveBounds=true;
+  const arr=(a,what,id)=>{ if(!Array.isArray(a)||a.length<H) throw new Error(`celda ${id}: '${what}' debe tener ${H} valores`); return a; };
+  // primero comprobar si todas las celdas traen trayectorias con el mismo S
+  for (let ci=0;ci<C.n;ci++){
+    const r=byId.get("c"+ci); if(!r) throw new Error(`falta la celda c${ci} en la respuesta`);
+    const sm=r.total && r.total.samples;
+    const s= Array.isArray(sm)&&sm.length ? sm.length : 0;
+    if (ci===0) S=s; else if (S!==s) S=0;
+    if (!(r.total && Array.isArray(r.total.lower) && Array.isArray(r.total.upper))) haveBounds=false;
+  }
+  const samples = S ? new Float32Array(C.n*S*H) : null;
+  if (!S && haveBounds){ lo=new Float64Array(C.n*H); hi=new Float64Array(C.n*H); }
+  for (let ci=0;ci<C.n;ci++){
+    const r=byId.get("c"+ci), id="c"+ci, o=ci*H;
+    const m=arr(r.total&&r.total.mean,"total.mean",id);
+    let lastN=0; for(let t=corteT();t>=0;t--){ const c=A.cnt[ci*T+t]; if(c>0){ lastN=c; break; } }
+    const nm = r.n_matriculas && Array.isArray(r.n_matriculas.mean) ? arr(r.n_matriculas.mean,"n_matriculas.mean",id) : null;
+    for (let h=0;h<H;h++){ mean[o+h]=Math.max(0,+m[h]||0); cnt[o+h]= nm? Math.max(0,+nm[h]||0) : lastN; }
+    if (samples){ const so=ci*S*H; r.total.samples.forEach((p,s)=>{ arr(p,"total.samples",id); for(let h=0;h<H;h++) samples[so+s*H+h]=+p[h]||0; }); }
+    else if (lo){ const L=arr(r.total.lower,"total.lower",id), U=arr(r.total.upper,"total.upper",id); for(let h=0;h<H;h++){ lo[o+h]=+L[h]; hi[o+h]=+U[h]; } }
+  }
+  return { key, H, S, mean, cnt, samples, lo, hi, model: resp.model || "modelo", method: samples? "trayectorias" : lo? "independencia" : "ninguno" };
+}
+
+async function getCellForecast(){
+  const f=FORECASTERS[FC.source];
+  const key=FC.source+"|"+(f.needsUrl?FC.url:"")+"|"+FC.h+"|"+corteT()+"|"+DATA.file+"|"+DATA.n;
+  if (CELLFC && CELLFC.key===key) return CELLFC;
+  if (PENDING && PENDING.key===key) return PENDING.promise;
+  const promise=(async()=>{ const resp=await f.predict(cellRequest()); return parseCellResponse(resp,key); })();
+  PENDING={key,promise};
+  try{ CELLFC=await promise; return CELLFC; } finally { if(PENDING&&PENDING.key===key) PENDING=null; }
+}
+
+/* ---- Suma de celdas para una serie ---- */
+function quant(sorted,q){ const p=(sorted.length-1)*q, i=Math.floor(p), f=p-i; return i+1<sorted.length? sorted[i]*(1-f)+sorted[i+1]*f : sorted[i]; }
+function aggForecast(cells, F){
+  const H=F.H, S=F.S, N=DATA.cells.n;
+  const tot=new Float64Array(H), n=new Float64Array(H), sam=S? new Float64Array(S*H):null, v2=F.lo? new Float64Array(H):null;
+  const add=ci=>{
+    const o=ci*H;
+    for (let h=0;h<H;h++){ tot[h]+=F.mean[o+h]; n[h]+=F.cnt[o+h]; }
+    if (sam){ const so=ci*S*H; for(let k=0;k<S*H;k++) sam[k]+=F.samples[so+k]; }
+    else if (v2){ for(let h=0;h<H;h++){ const hw=(F.hi[o+h]-F.lo[o+h])/2; v2[h]+=hw*hw; } }
+  };
+  if (cells) for (let i=0;i<cells.length;i++) add(cells[i]); else for (let ci=0;ci<N;ci++) add(ci);
+  const out = {
+    total: {mean:Array.from(tot), lower:null, upper:null},
+    avg: {mean:Array.from(tot,(x,h)=>n[h]>0?x/n[h]:null), lower:null, upper:null},
+    suscriptores: Array.from(n)
+  };
+  if (sam){
+    const L=[],U=[]; const col=new Float64Array(S);
+    for (let h=0;h<H;h++){ for(let s=0;s<S;s++) col[s]=sam[s*H+h]; col.sort(); L.push(Math.max(0,quant(col,0.1))); U.push(Math.max(0,quant(col,0.9))); }
+    out.total.lower=L; out.total.upper=U;
+  } else if (v2){
+    out.total.lower=Array.from(tot,(x,h)=>Math.max(0,x-Math.sqrt(v2[h]))); out.total.upper=Array.from(tot,(x,h)=>x+Math.sqrt(v2[h]));
+  }
+  if (out.total.lower){ out.avg.lower=out.total.lower.map((x,h)=> n[h]>0? x/n[h]:null); out.avg.upper=out.total.upper.map((x,h)=> n[h]>0? x/n[h]:null); }
+  return out;
+}
+
+async function attachForecast(series){
+  const badge=$("fcBadge"), st=$("fcStatus");
+  if (!FC.on || !series.length){ st.textContent=""; return; }
+  const f=FORECASTERS[FC.source];
+  try{
+    if (!CELLFC || !CELLFC.key.startsWith(FC.source+"|")) st.textContent=`Prediciendo ${fmt(DATA.cells.n,0)} celdas…`;
+    const F=await getCellForecast();
+    series.forEach(s=>{ s.fc=aggForecast(s.cells,F); });
+    // ¿el servidor respondió con su dummy? (no encontró modelo_global.joblib junto a servidor_prediccion.py)
+    const servidorDummy = !f.dummy && /dummy/i.test(F.model||"");
+    FC.isDummy = f.dummy || servidorDummy;
+    badge.className="pill"+(FC.isDummy?" warn":""); badge.textContent=FC.isDummy?"DUMMY":"MODELO";
+    const how = F.method==="trayectorias" ? `intervalo por ${F.S} trayectorias` : F.method==="independencia" ? "intervalo aproximado (independencia entre celdas)" : "sin intervalo";
+    st.innerHTML = (f.dummy ? "Predicción de referencia (estacional ingenua), se reemplaza al conectar el modelo definitivo"
+        : servidorDummy ? `<b style="color:#8a5300">El servidor respondió con su dummy («${esc(F.model)}»), no con tu modelo.</b> Copia <code>modelo_global.joblib</code> y <code>predictor_consumo.py</code> en la misma carpeta que <code>servidor_prediccion.py</code> y reinícialo`
+        : `Modelo «${esc(F.model)}»`)
+      + ` · ${fmt(DATA.cells.n,0)} celdas (estrato × comuna × sector) sumadas por grupo · ${how}`;
+    if (F.method==="ninguno") FC.bandAvailable=false; else FC.bandAvailable=true;
+  }catch(e){
+    console.error(e);
+    series.forEach(s=>delete s.fc);
+    badge.className="pill err"; badge.textContent="ERROR";
+    st.textContent="No se pudo obtener la predicción: "+e.message;
+  }
+}
+function renderTestOptions(){
+  const T=DATA.T, opts=[0,3,6,12].filter(v=> T-v>=12);           // deja al menos 12 meses de predictor
+  if (!opts.includes(FC.test)) FC.test = opts.filter(v=>v<=FC.test).pop() ?? 0;
+  $("fcTest").innerHTML=opts.map(v=>`<option value="${v}" ${v===FC.test?"selected":""}>${v? v+" meses" : "Sin test"}</option>`).join("");
+  [...$("fcH").options].forEach(op=>{ op.disabled = +op.value < FC.test; });
+  if (FC.h < FC.test){ FC.h=[6,12,18,24].find(v=>v>=FC.test); $("fcH").value=String(FC.h); }
+}
+function renderFcSources(){
+  const sel=$("fcSrc"); if(!sel) return;
+  sel.innerHTML=Object.entries(FORECASTERS).filter(([id])=>id==="local").map(([id,f])=>`<option value="${id}" ${id===FC.source?"selected":""}>${esc(f.label)}</option>`).join("");
+  $("fcUrlWrap").classList.toggle("hidden", !FORECASTERS[FC.source]?.needsUrl);
+}
+
+/* ---------- Gráfico de líneas SVG ---------- */
+const SVGNS="http://www.w3.org/2000/svg";
+function el(tag, attrs, parent){ const e=document.createElementNS(SVGNS,tag); for(const k in attrs) e.setAttribute(k,attrs[k]); if(parent) parent.appendChild(e); return e; }
+function niceStep(range, target){
+  const raw=range/target, p=Math.pow(10,Math.floor(Math.log10(raw))), r=raw/p;
+  return (r<=1?1:r<=2?2:r<=2.5?2.5:r<=5?5:10)*p;
+}
+function drawChart(boxId, series, metric){
+  const box=$(boxId); box.innerHTML="";
+  const T=DATA.T, W=Math.max(320, box.clientWidth), H=340;
+  const hasFc = series.some(s=>s.fc), o=corteT(), p0=inicioPredT(), fs=o+1;   // fs = primer mes predicho
+  const TT = hasFc ? Math.max(T, fs+FC.h) : T;
+  const band = hasFc && FC.band, nTest = hasFc ? Math.min(FC.test, FC.h) : 0;
+  const direct = series.length>0 && series.length<=4;
+  const M={l:62, r: direct? 150: 18, t:22, b:44};
+  const iw=W-M.l-M.r, ih=H-M.t-M.b;
+  const svg=el("svg",{viewBox:`0 0 ${W} ${H}`, width:W, height:H, "font-family":"Open Sans, Arial, sans-serif", role:"img"} , box);
+  el("rect",{x:0,y:0,width:W,height:H,fill:"#ffffff"},svg);
+  if (!series.length){
+    const tx=el("text",{x:W/2,y:H/2,"text-anchor":"middle",fill:"#727272","font-size":14},svg); tx.textContent="Selecciona al menos una categoría en el panel izquierdo";
+    return;
+  }
+  const real=(s,t)=> t<T ? s[metric][t] : null;
+  const pred=(s,t)=> (s.fc && t>=fs && t<fs+FC.h) ? s.fc[metric].mean[t-fs] : null;
+  let maxV=0;
+  series.forEach(s=>{ for(let t=0;t<TT;t++){ for(const v of [real(s,t),pred(s,t)]) if(v!=null&&v>maxV) maxV=v; }
+    if(band && s.fc && s.fc[metric].upper) s.fc[metric].upper.forEach(v=>{ if(v!=null&&v>maxV) maxV=v; }); });
+  if (maxV<=0) maxV=1;
+  let minV=Infinity;
+  series.forEach(s=>{ for(let t=0;t<TT;t++){ for(const v of [real(s,t),pred(s,t)]) if(v!=null&&v<minV) minV=v; }
+    if(band && s.fc && s.fc[metric].lower) s.fc[metric].lower.forEach(v=>{ if(v!=null&&v<minV) minV=v; }); });
+  if (!isFinite(minV)) minV=0;
+  // dominio vertical: zoom del usuario › ajustado a los datos › desde 0
+  let yMin, yMax, step;
+  const z=YZ[boxId];
+  if (z){ yMin=z.min; yMax=z.max; step=niceStep(yMax-yMin,7); }
+  else if (FIT[boxId]){
+    const pad=(maxV-minV)*0.08 || maxV*0.05 || 1;
+    step=niceStep(maxV-minV+2*pad,6); yMin=Math.max(0,Math.floor((minV-pad)/step)*step); yMax=Math.ceil((maxV+pad)/step)*step;
+  } else { yMin=0; step=niceStep(maxV,5); yMax=Math.ceil(maxV/step)*step; }
+  DOM[boxId]={yMin,yMax};
+  const x=t=> M.l + (TT===1? iw/2 : t*iw/(TT-1));
+  const y=v=> M.t + ih - (v-yMin)/(yMax-yMin)*ih;
+  const dentro=v=> v>=yMin-1e-12 && v<=yMax+1e-12;
+  const clipId="clip_"+boxId;
+  const defs=el("defs",{},svg), cp=el("clipPath",{id:clipId},defs);
+  el("rect",{x:M.l-2,y:M.t,width:iw+4,height:ih},cp);
+  const tcur=DATA.pMax-DATA.tMin;
+  const zona=(a,b,fill,label,color,anchor)=>{
+    el("rect",{x:x(a),y:M.t,width:Math.max(0,x(b)-x(a)),height:ih,fill},svg);
+    if (label){ const tx=el("text",{x: anchor==="end"? x(b)-6 : x(a)+6, y:M.t-7,"text-anchor":anchor||"start",fill:color,"font-size":11,"font-weight":700},svg); tx.textContent=label; }
+  };
+  // zonas: predictor · test · futuro
+  if (hasFc){
+    if (p0>0) zona(0, p0, "#f7f8fa", "", "");
+    const tl=el("text",{x:x(o)-6,y:M.t-7,"text-anchor":"end",fill:"#727272","font-size":11,"font-weight":700},svg);
+    tl.textContent=`PREDICTOR (${o-p0+1} m)`;
+    if (nTest>0) zona(o, Math.min(T-1, o+nTest), "#fff4e5", "TEST", "#b25b00");
+    if (TT-1>T-1) zona(T-1, TT-1, "#f5f9ec", "PREDICCIÓN"+(FC.isDummy?" (DUMMY)":""), "#5f7a12", nTest>0?"end":"start");
+  }
+  // rejilla y eje Y
+  for (let i=Math.ceil(yMin/step-1e-9); i*step<=yMax+step*1e-6; i++){
+    const v=i*step;
+    el("line",{x1:M.l,x2:M.l+iw,y1:y(v),y2:y(v),stroke: Math.abs(v)<1e-12?"#b8c3ce":"#e3e9f0","stroke-width":1},svg);
+    const tx=el("text",{x:M.l-8,y:y(v)+4,"text-anchor":"end",fill:"#727272","font-size":11.5},svg); tx.textContent=fmtTick(v,step);
+  }
+  if (yMin>0){   // marca de eje truncado: el eje no empieza en 0
+    el("path",{d:`M${M.l-5},${M.t+ih-2} l5,-4 l5,4`,stroke:"#8a94a0","stroke-width":1.2,fill:"none"},svg);
+  }
+  const yl=el("text",{x:14,y:M.t+ih/2,transform:`rotate(-90 14 ${M.t+ih/2})`,"text-anchor":"middle",fill:"#727272","font-size":11.5},svg);
+  yl.textContent=UNIT;
+  // eje X (marcas ancladas al último mes con datos)
+  const every = Math.ceil(TT / Math.max(2, Math.floor(iw/52)));
+  let lastYear=null;
+  for (let t=0;t<TT;t++){
+    if ((((t-tcur)%every)+every)%every!==0) continue;
+    const idx=DATA.tMin+t;
+    const tx=el("text",{x:x(t),y:M.t+ih+18,"text-anchor":"middle",fill: idx===DATA.pMax?"#0b3d7a": t>=T?"#5f7a12":"#727272","font-size":11.5,"font-weight": idx===DATA.pMax?700:400},svg);
+    tx.textContent=monthLabel(idx);
+    const yr=Math.floor(idx/12);
+    if (yr!==lastYear){ const ty=el("text",{x:x(t),y:M.t+ih+33,"text-anchor":"middle",fill:"#9aa4ae","font-size":10.5},svg); ty.textContent=yr; lastYear=yr; }
+  }
+  // líneas verticales: corte y último mes con datos
+  if (hasFc && nTest>0) el("line",{x1:x(o),x2:x(o),y1:M.t,y2:M.t+ih,stroke:"#8a94a0","stroke-width":1.5,"stroke-dasharray":"2 3"},svg);
+  el("line",{x1:x(tcur),x2:x(tcur),y1:M.t,y2:M.t+ih,stroke:"#93c01f","stroke-width":1.5,"stroke-dasharray":"3 4"},svg);
+  // bandas
+  if (band){
+    const gb=el("g",{"clip-path":`url(#${clipId})`},svg);
+    series.forEach(s=>{
+      if(!s.fc) return; const f=s.fc[metric]; if(!f.lower||!f.upper) return;
+      const a=real(s,o); let up="", lo="";
+      if (a!=null) up+=`M${x(o).toFixed(1)},${y(a).toFixed(1)}`;
+      f.upper.forEach((v,h)=>{ if(v==null) return; up+=(up?"L":"M")+x(fs+h).toFixed(1)+","+y(v).toFixed(1); });
+      for (let h=f.lower.length-1;h>=0;h--){ const v=f.lower[h]; if(v==null) continue; lo+="L"+x(fs+h).toFixed(1)+","+y(v).toFixed(1); }
+      if (a!=null) lo+=`L${x(o).toFixed(1)},${y(a).toFixed(1)}`;
+      el("path",{d:up+lo+"Z",fill:s.color,"fill-opacity":series.length>3?0.08:0.14,stroke:"none"},gb);
+    });
+  }
+  // líneas: real (continua) y predicción (discontinua, desde el corte)
+  const gl=el("g",{fill:"none","stroke-linejoin":"round","stroke-linecap":"round","clip-path":`url(#${clipId})`},svg);
+  series.forEach(s=>{
+    let d="", pen=false;
+    for (let t=0;t<T;t++){ const v=real(s,t); if(v==null){pen=false;continue;} d+=(pen?"L":"M")+x(t).toFixed(1)+","+y(v).toFixed(1); pen=true; }
+    el("path",{d,stroke:s.color,"stroke-width": s.kind==="all"?2.5:2,"stroke-dasharray": s.kind==="other"?"6 4":"none"},gl);
+    if (s.fc){
+      const a=real(s,o); let fd= a!=null? `M${x(o).toFixed(1)},${y(a).toFixed(1)}` : ""; let p=a!=null;
+      s.fc[metric].mean.forEach((v,h)=>{ if(v==null){p=false;return;} fd+=(p?"L":"M")+x(fs+h).toFixed(1)+","+y(v).toFixed(1); p=true; });
+      el("path",{d:fd,stroke:s.color,"stroke-width":2,"stroke-dasharray":"5 4"},gl);
+    }
+  });
+  // etiquetas directas (≤4 series) en el último punto dibujado
+  if (direct){
+    const last=s=>{ for(let t=TT-1;t>=0;t--){ const v=pred(s,t)??real(s,t); if(v!=null) return {t,v}; } return null; };
+    const labs=series.map(s=>{ const l=last(s); return l? {s,t:l.t,v:l.v,yy:Math.min(M.t+ih,Math.max(M.t,y(l.v)))} : null; }).filter(Boolean).sort((a,b)=>a.yy-b.yy);
+    for (let i=1;i<labs.length;i++) if (labs[i].yy-labs[i-1].yy<15) labs[i].yy=labs[i-1].yy+15;
+    labs.forEach(o2=>{
+      const lx=M.l+iw+10;
+      if (dentro(o2.v)) el("circle",{cx:x(o2.t),cy:y(o2.v),r:3.5,fill:o2.s.color,stroke:"#fff","stroke-width":1.5},svg);
+      el("rect",{x:lx,y:o2.yy-1.5,width:10,height:3,rx:1.5,fill:o2.s.color},svg);
+      let name=o2.s.name; if(name.length>18) name=name.slice(0,17)+"…";
+      const tx=el("text",{x:lx+15,y:o2.yy+4,fill:"#1f2a37","font-size":12,"font-weight":600},svg); tx.textContent=name;
+    });
+  }
+  // interacción: cruz + tooltip
+  const cross=el("line",{y1:M.t,y2:M.t+ih,stroke:"#8a94a0","stroke-width":1,opacity:0},svg);
+  const dots=el("g",{},svg);
+  const tip=document.createElement("div"); tip.className="tip"; box.appendChild(tip);
+  const hit=el("rect",{x:M.l-10,y:M.t,width:iw+20,height:ih,fill:"transparent",style:"cursor:crosshair"},svg);
+  const show=(evt)=>{
+    const r=svg.getBoundingClientRect(), sx=(evt.clientX-r.left)*W/r.width;
+    const t=Math.max(0,Math.min(TT-1,Math.round((sx-M.l)/(iw/(Math.max(1,TT-1))))));
+    const enTest = hasFc && t>=fs && t<T, enFut = t>=T;
+    cross.setAttribute("x1",x(t)); cross.setAttribute("x2",x(t)); cross.setAttribute("opacity",1);
+    dots.innerHTML="";
+    const rows=series.map(s=>{
+      const rv=real(s,t), pv=pred(s,t), f=s.fc&&s.fc[metric];
+      const lo= pv!=null&&f&&f.lower? f.lower[t-fs]:null, hi= pv!=null&&f&&f.upper? f.upper[t-fs]:null;
+      return {s, rv, pv, lo, hi, c: t<T? s.cnt[t]:null, key: rv??pv??-1};
+    }).sort((a,b)=>b.key-a.key);
+    rows.forEach(q=>{
+      if(q.rv!=null && dentro(q.rv)) el("circle",{cx:x(t),cy:y(q.rv),r:4.5,fill:q.s.color,stroke:"#fff","stroke-width":2},dots);
+      if(q.pv!=null && dentro(q.pv)) el("circle",{cx:x(t),cy:y(q.pv),r:4.5,fill:"#fff",stroke:q.s.color,"stroke-width":2},dots);
+    });
+    const idx=DATA.tMin+t;
+    const etiqueta = enTest? ` · <span style="color:#b25b00">test</span>` : enFut? ` · <span style="color:#5f7a12">predicción</span>` : (hasFc&&t<=o&&t>=p0? " · predictor":"");
+    const cuerpo=q=>{
+      if (enTest && q.rv!=null && q.pv!=null){
+        const e=q.rv? (q.pv-q.rv)/q.rv*100 : null;
+        return `<span class="v">${fmt(q.rv)}</span><span class="c">predicho ${fmt(q.pv)}${e!=null?` (${e>=0?"+":""}${fmt(e,1)} %)`:""}${q.lo!=null&&FC.band?` · 80 %: ${fmt(q.lo)}–${fmt(q.hi)}`:""}</span>`;
+      }
+      if (q.pv!=null && q.rv==null) return `<span class="v">${fmt(q.pv)}</span>${q.lo!=null&&FC.band?`<span class="c">80 %: ${fmt(q.lo)} – ${fmt(q.hi)}</span>`:""}`;
+      return `<span class="v">${fmt(q.rv)}</span>${metric==="avg"&&q.c?`<span class="c">${fmt(q.c,0)} suscriptores con dato</span>`:""}`;
+    };
+    tip.innerHTML=`<div class="t">${monthLabel(idx,true)}${idx===DATA.pMax?" · último mes":""}${etiqueta}</div>`+
+      rows.map(q=>`<div class="r"><span class="k" style="background:${q.s.color}"></span><span class="n">${esc(q.s.name)}</span>${cuerpo(q)}</div>`).join("")+
+      `<div class="r" style="margin-top:4px"><span></span><span class="n" style="color:#9aa4ae;font-size:11px">${UNIT}${enTest?" · valor real; debajo, predicho":""}</span></div>`;
+    tip.style.opacity=1;
+    const bw=box.clientWidth, px=x(t)*r.width/W, tw=tip.offsetWidth;
+    tip.style.left=(px+16+tw>bw ? px-16-tw : px+16)+"px";
+    tip.style.top=Math.max(0,(evt.clientY-r.top)-tip.offsetHeight/2)+"px";
+  };
+  hit.addEventListener("mousemove",show);
+  hit.addEventListener("mouseleave",()=>{ tip.style.opacity=0; cross.setAttribute("opacity",0); dots.innerHTML=""; });
+
+  // ---- zoom vertical ----
+  const svgY=e=>{ const r=svg.getBoundingClientRect(); return (e.clientY-r.top)*H/r.height; };
+  const clampY=py=>Math.min(M.t+ih,Math.max(M.t,py));
+  const valor=py=> yMin + (M.t+ih-py)/ih*(yMax-yMin);
+  const gutter=el("rect",{x:0,y:M.t,width:M.l,height:ih,fill:"transparent",style:"cursor:ns-resize"},svg);
+  const t1=el("title",{},gutter); t1.textContent="Arrastra para elegir el rango vertical · rueda para acercar/alejar · doble clic restablece";
+  const sel=el("rect",{x:M.l,width:iw,y:M.t,height:0,fill:"#2195d3","fill-opacity":0.12,stroke:"#2195d3","stroke-dasharray":"4 3",visibility:"hidden","pointer-events":"none"},svg);
+  gutter.addEventListener("mousedown",e=>{
+    e.preventDefault();
+    const y0=clampY(svgY(e)); let y1=y0;
+    const mv=ev=>{ y1=clampY(svgY(ev)); sel.setAttribute("y",Math.min(y0,y1)); sel.setAttribute("height",Math.abs(y1-y0)); sel.setAttribute("visibility","visible"); };
+    const up=()=>{ window.removeEventListener("mousemove",mv); window.removeEventListener("mouseup",up);
+      sel.setAttribute("visibility","hidden");
+      if (Math.abs(y1-y0)>6) fijarZoom(boxId, valor(Math.max(y0,y1)), valor(Math.min(y0,y1))); };
+    window.addEventListener("mousemove",mv); window.addEventListener("mouseup",up);
+  });
+  const rueda=e=>{
+    if (e.currentTarget===hit && !(e.ctrlKey||e.metaKey)) return;     // sobre la gráfica solo con Ctrl/⌘ (o pellizco)
+    e.preventDefault();
+    const v=valor(clampY(svgY(e))), f=e.deltaY>0? 1.2 : 1/1.2;
+    fijarZoom(boxId, v-(v-yMin)*f, v+(yMax-v)*f);
+  };
+  gutter.addEventListener("wheel",rueda,{passive:false});
+  hit.addEventListener("wheel",rueda,{passive:false});
+  gutter.addEventListener("dblclick",()=>restablecerZoom(boxId));
+  hit.addEventListener("dblclick",()=>restablecerZoom(boxId));
+  if (z || FIT[boxId]){ const fl=el("text",{x:M.l+6,y:M.t+14,fill:"#0943b5","font-size":11,"font-weight":700},svg); fl.textContent = z? "EJE Y AMPLIADO" : "EJE Y AJUSTADO"; }
+}
+
+/* ---------- Render ---------- */
+function showDashboard(){
+  YZ.chartTotal=YZ.chartAvg=null; FIT.chartTotal=FIT.chartAvg=false; ["chartTotal","chartAvg"].forEach(actualizarZoomUI);
+  $("dropzone").classList.add("hidden"); $("dash").classList.remove("hidden"); $("btnReload").classList.remove("hidden");
+  const per=[...DATA.periods.keys()].sort((a,b)=>a-b);
+  $("fileInfo").textContent=`${DATA.file} · ${fmt(DATA.n,0)} registros · periodo ${per.map(p=>monthLabel(p,true)).join(", ")}`;
+  document.querySelectorAll(".unit").forEach(e=>e.textContent=UNIT);
+  $("unitNote").innerHTML=`Los valores corresponden a las columnas MES_ACTUAL … MES_${DATA.K-1} del archivo, ubicadas en el calendario a partir de PERIODO_CONSULTA (MES_1 = un mes antes, MES_2 = dos meses antes…). En el archivo MES_ACTUAL ≈ CONSUMO_ACTUAL ÷ días del periodo facturado, por eso se expresan en ${UNIT}. Las celdas vacías no cuentan para el promedio. <b>Predictor y test:</b> el modelo recibe solo los ${PRED_L} meses anteriores al corte (zona «PREDICTOR»); los últimos meses del archivo (zona naranja «TEST», 6 por defecto) no se le envían y sirven para comparar lo predicho con lo observado en el panel «Evaluación en test». La zona verde es la predicción más allá del último mes con datos. Línea continua = real; discontinua = predicción; sombra = intervalo del 80 %. El horizonte se cuenta desde el corte. La predicción se calcula para cada celda base (uso/estrato × comuna × sector hidráulico) y se suma por grupo, de modo que las categorías siempre suman el total; el promedio predicho es total ÷ suscriptores predichos. El modelo «Dummy» repite el patrón del mismo mes del año anterior ajustado por el crecimiento interanual reciente; es solo un marcador de posición hasta conectar el modelo definitivo.`+
+    (DATA.skipped?` <b>${fmt(DATA.skipped,0)} filas se omitieron por no tener un PERIODO_CONSULTA válido.</b>`:"")+
+    (per.length>1?` El archivo contiene varios periodos de consulta; cada fila se ubica según su propio periodo.`:"");
+  CELLFC=null; PENDING=null; renderFcSources();
+  FC.test = DATA.T>=PRED_L+6 ? 6 : 0;                               // por defecto: 18 meses de predictor + 6 de test
+  renderTestOptions();
+  renderKpis(); renderGroupSeg(); renderAll();
+}
+function renderKpis(){
+  const a=aggregate("__TOTAL__"), tc=DATA.pMax-DATA.tMin;
+  const tot=a.tot[tc], avg=a.totc[tc]? tot/a.totc[tc] : null;
+  const prev=tc-12>=0 && a.totc[tc-12] ? a.tot[tc-12] : null;
+  const yoy= prev? (tot/prev-1)*100 : null;
+  const k=[
+    ["Suscriptores", fmt(DATA.uniqueMat ?? DATA.n,0), `${fmt(DATA.n,0)} registros en el archivo`],
+    ["Periodo de consulta", monthLabel(DATA.pMax,true).replace(/^./,c=>c.toUpperCase()), "MES_ACTUAL"],
+    ["Ventana analizada", `${DATA.T} meses`, FC.test>0
+        ? `Predictor ${monthLabel(DATA.tMin+inicioPredT())}–${monthLabel(DATA.tMin+corteT())} · test ${monthLabel(DATA.tMin+corteT()+1)}–${monthLabel(DATA.tMax)}`
+        : `${monthLabel(DATA.tMin)} – ${monthLabel(DATA.tMax)}` + (DATA.T<PRED_L+6? " · se requieren ≥ 24 meses para test":"")],
+    ["Consumo total · mes actual", fmt(tot), UNIT + (yoy!=null? ` · ${yoy>=0?"+":""}${fmt(yoy,1)} % vs. hace 12 meses`:"")],
+    ["Promedio por suscriptor · mes actual", fmt(avg), UNIT]
+  ];
+  $("kpis").innerHTML=k.map(([l,v,s])=>`<div class="kpi"><div class="lbl">${l}</div><div class="val">${v}</div><div class="sub">${s}</div></div>`).join("");
+}
+function renderGroupSeg(){
+  $("groupSeg").innerHTML=GROUPS.map(g=>{
+    const ok = g.key==="__TOTAL__" || DATA.groups[g.key];
+    return `<button type="button" data-g="${g.key}" class="${g.key===state.group?"on":""}" ${ok?"":"disabled title='Columna no encontrada en el archivo'"}>${g.label}</button>`;
+  }).join("");
+}
+function renderAll(){
+  const isTotal = state.group==="__TOTAL__";
+  $("catsPanel").classList.toggle("hidden", isTotal);
+  document.querySelector(".layout").style.gridTemplateColumns = isTotal? "1fr" : "";
+  $("chkAll").parentElement.classList.toggle("hidden", isTotal);
+  $("chkOther").parentElement.classList.toggle("hidden", isTotal);
+  if (!isTotal){ defaultSel(state.group); renderCats(); }
+  const series=buildSeries();
+  renderLegend(series);
+  const token=++renderToken;
+  const paint=()=>{ CURRENT=series; drawChart("chartTotal", series, "total"); drawChart("chartAvg", series, "avg"); renderTable(series); renderTestPanel(series); };
+  if (!FC.on){ $("fcStatus").textContent=""; paint(); return; }
+  if (!FORECASTERS[FC.source].dummy) paint();      // muestra el histórico mientras responde el modelo
+  attachForecast(series).then(()=>{ if(token===renderToken) paint(); });
+}
+let renderToken=0, CURRENT=[];
+function renderCats(){
+  const key=state.group, a=aggregate(key), sel=selOf(key), g=GROUPS.find(g=>g.key===key);
+  $("catsTitle").textContent=g.label;
+  $("catsHint").textContent=`${fmt(a.nC,0)} categorías · elige hasta ${MAX_SEL} para comparar`;
+  const q=state.search.trim().toLowerCase();
+  let idx=[...Array(a.nC).keys()].filter(c=>!q || a.names[c].toLowerCase().includes(q));
+  const coll=new Intl.Collator("es",{numeric:true});
+  if (state.sort==="cons") idx.sort((x,y)=>a.latest[y]-a.latest[x]);
+  else if (state.sort==="n") idx.sort((x,y)=>a.rows[y]-a.rows[x]);
+  else idx.sort((x,y)=>coll.compare(a.names[x],a.names[y]));
+  const maxL=Math.max(...a.latest,1e-9), full=sel.length>=MAX_SEL;
+  $("catList").innerHTML = idx.length ? idx.map(c=>{
+    const on=sel.includes(c), dis=!on&&full;
+    const sw = on? `style="background:${PALETTE[state.slots[key][c]]};border:0"` : "";
+    const share = a.tot[DATA.T-1] ? a.latest[c]/a.tot[DATA.T-1]*100 : 0;
+    return `<label class="cat${dis?" disabled":""}" title="${esc(a.names[c])}">
+      <input type="checkbox" data-c="${c}" ${on?"checked":""} ${dis?"disabled":""}>
+      <span class="sw" ${sw}></span>
+      <span><div class="name">${esc(a.names[c])}</div>
+      <div class="meta"><span>${fmt(a.rows[c],0)} susc.</span><span class="bar"><i style="width:${(a.latest[c]/maxL*100).toFixed(1)}%"></i></span><span>${fmt(share,1)} %</span></div></span>
+    </label>`;
+  }).join("") : `<div style="padding:14px;color:var(--ink-3)">Sin coincidencias</div>`;
+  $("catLimit").textContent = `${sel.length} de ${MAX_SEL} seleccionadas` + (full? " · máximo alcanzado (activa «Otras» para ver el resto sumado)":"") + " · % = participación en el consumo del mes actual";
+}
+function renderLegend(series){
+  const lg=$("legend");
+  if (!series.length){ lg.innerHTML=`<span class="empty">Sin series seleccionadas</span>`; return; }
+  lg.innerHTML=series.map((s,i)=>`<span class="item"><span class="key" style="border-color:${s.color};${s.kind==="other"?"border-top-style:dashed":""}"></span>${esc(s.name)}${s.kind==="cat"&&state.group!=="__TOTAL__"?`<button type="button" title="Quitar" data-rm="${s.code}">×</button>`:""}</span>`).join("");
+}
+function tableRows(series){
+  const rows=[], T=DATA.T, hasFc=series.some(s=>s.fc), o=corteT(), p0=inicioPredT(), fs=o+1;
+  const TT = hasFc ? Math.max(T, fs+FC.h) : T;
+  const pr=(s,m,t,k)=> (s.fc && s.fc[m][k] && t>=fs && t<fs+FC.h) ? s.fc[m][k][t-fs] : null;
+  for (let t=0;t<TT;t++){
+    const idx=DATA.tMin+t;
+    const tipo = t>=T ? "FUTURO" : (hasFc && t>=fs) ? "TEST" : (hasFc && t>=p0) ? "PREDICTOR" : "HISTORICO";
+    const vals=series.map(s=>({
+      tr: t<T? s.total[t]:null, tp: pr(s,"total",t,"mean"), tl: pr(s,"total",t,"lower"), tu: pr(s,"total",t,"upper"),
+      ar: t<T? s.avg[t]:null,   ap: pr(s,"avg",t,"mean"),   al: pr(s,"avg",t,"lower"),   au: pr(s,"avg",t,"upper"),
+      n: t<T ? s.cnt[t] : null,
+      np: (s.fc && t>=fs && t<fs+FC.h) ? s.fc.suscriptores?.[t-fs] ?? null : null }));
+    rows.push({idx, t, tipo, mes:monthLabel(idx,true), vals});
+  }
+  return rows;
+}
+function renderTable(series){
+  if (!series.length){ $("tableBox").innerHTML=""; return; }
+  const hasFc=series.some(s=>s.fc);
+  const cols = hasFc ? ["Total real","Total pred.","Prom. real","Prom. pred.","Susc."] : ["Total","Promedio","Susc."];
+  const h1=`<tr><th rowspan="2">Mes</th>${series.map(s=>`<th colspan="${cols.length}" style="text-align:center;border-bottom:2px solid ${s.color}">${esc(s.name)}</th>`).join("")}</tr>`;
+  const h2=`<tr>${series.map(()=>cols.map(c=>`<th>${c}</th>`).join("")).join("")}</tr>`;
+  const cls={FUTURO:"fc",TEST:"test",PREDICTOR:"",HISTORICO:""};
+  const tag={FUTURO:" (pred.)",TEST:" (test)",PREDICTOR:"",HISTORICO:""};
+  const o=corteT();
+  const body=tableRows(series).reverse().map(r=>`<tr class="${cls[r.tipo]}${hasFc&&r.t===o?" sep":""}"><td>${r.mes}${tag[r.tipo]}${hasFc&&r.t===o?" · corte":""}</td>${
+      r.vals.map(v=> hasFc ? `<td>${fmt(v.tr)}</td><td>${v.tp==null?"":fmt(v.tp)}</td><td>${fmt(v.ar)}</td><td>${v.ap==null?"":fmt(v.ap)}</td><td>${v.n==null?"":fmt(v.n,0)}</td>`
+                           : `<td>${fmt(v.tr)}</td><td>${fmt(v.ar)}</td><td>${fmt(v.n,0)}</td>`).join("")}</tr>`).join("");
+  $("tableBox").innerHTML=`<table><thead>${h1}${h2}</thead><tbody>${body}</tbody></table>`;
+}
+
+/* ---------- Evaluación en test ---------- */
+function testMetrics(s){
+  if (!s.fc || FC.test<=0) return null;
+  const fs=corteT()+1, T=DATA.T, out={};
+  for (const m of ["total","avg"]){
+    let sr=0, sp=0, n=0, sae=0, sape=0, nape=0, saeB=0, sapeB=0, cin=0, cn=0;
+    const base = s.fcBase ? s.fcBase[m] : null;
+    for (let t=fs;t<T && t-fs<FC.h;t++){
+      const r=s[m][t], p=s.fc[m].mean[t-fs]; if (r==null||p==null) continue;
+      const e=Math.abs(r-p); sae+=e; sr+=r; sp+=p; n++;
+      if (r>0){ sape+=e/r; nape++; }
+      if (base && base[t-fs]!=null){ const eb=Math.abs(r-base[t-fs]); saeB+=eb; if(r>0) sapeB+=eb/r; }
+      const lo=s.fc[m].lower, hi=s.fc[m].upper;
+      if (lo&&hi&&lo[t-fs]!=null){ cn++; if(r>=lo[t-fs]&&r<=hi[t-fs]) cin++; }
+    }
+    out[m]={ n,
+      mape: nape? sape/nape*100 : null,           // error promedio porcentual (MAPE)
+      mae:  n? sae/n : null,                      // error promedio absoluto (MAE, m³/día)
+      mapeBase: base&&nape? sapeB/nape*100 : null,
+      maeBase:  base&&n? saeB/n : null,
+      sesgo: sr? (sp-sr)/sr*100 : null, cob: cn? cin/cn*100 : null };
+  }
+  return out;
+}
+function renderTestPanel(series){
+  const box=$("testPanel");
+  const ms=series.map(s=>({s,m:testMetrics(s)})).filter(o=>o.m && o.m.total.n>0);
+  if (!FC.on || FC.test<=0 || !ms.length){ box.classList.add("hidden"); return; }
+  const o=corteT(), p0=inicioPredT(), fs=o+1, last=Math.min(DATA.T-1, fs+FC.h-1);
+  const conBase = ms.some(x=>x.m.total.mapeBase!=null);
+  const nf1=new Intl.NumberFormat("es-CO",{minimumFractionDigits:1,maximumFractionDigits:1});
+  const pct=v=> v==null? "—" : nf1.format(v)+" %";
+  const sgn=v=> v==null? "—" : (v>=0?"+":"")+nf1.format(v)+" %";
+  // decimales fijos por columna según la magnitud (p. ej. 0,016 y 0,020, no 0,02)
+  const fijo=d=>new Intl.NumberFormat("es-CO",{minimumFractionDigits:d,maximumFractionDigits:d});
+  const decs=v=> v==null? 1 : Math.abs(v)>=100? 1 : Math.abs(v)>=1? 2 : 3;
+  let nfT=fijo(1), nfS=fijo(3);
+  const abs=v=> v==null? "—" : fmt(v);
+  // Promedio de los grupos visualizados (excluye «Total general» y «Otras», que no son grupos seleccionados)
+  const grupos = ms.filter(x=>x.s.kind==="cat");
+  const media = f => { const v=grupos.map(f).filter(x=>x!=null&&isFinite(x)); return v.length? v.reduce((a,b)=>a+b,0)/v.length : null; };
+  const prom = {
+    mapeT: media(x=>x.m.total.mape), maeT: media(x=>x.m.total.mae),
+    mapeS: media(x=>x.m.avg.mape),   maeS: media(x=>x.m.avg.mae),
+    mapeTB: media(x=>x.m.total.mapeBase), maeTB: media(x=>x.m.total.maeBase),
+    mapeSB: media(x=>x.m.avg.mapeBase),   maeSB: media(x=>x.m.avg.maeBase),
+    sesgo: media(x=>x.m.total.sesgo), cob: media(x=>x.m.total.cob)
+  };
+  nfT=fijo(decs(prom.maeT ?? media(x=>x.m.total.mae))); nfS=fijo(decs(prom.maeS));
+  const absT=v=> v==null? "—" : nfT.format(v), absS=v=> v==null? "—" : nfS.format(v);
+  const nG = grupos.length, gLabel = GROUPS.find(g=>g.key===state.group).label.toLowerCase();
+  const vsDummy=(v,b,f)=> b==null ? "" : Math.abs(v-b) < Math.max(1e-9, Math.abs(b)*0.01) ? " · igual que el dummy"
+        : v<b ? ` · <span class="good">mejor que el dummy (${f(b)})</span>` : ` · <span class="bad">peor que el dummy (${f(b)})</span>`;
+  const quien = `${nG} ${nG===1?"grupo":"grupos"}${state.group!=="__TOTAL__"?` (${gLabel})`:""}`;
+  const tile=(main,lbl,val,sub)=>`<div class="tile${main?" main":""}"><div class="lbl">${lbl}</div><div class="val">${val}</div><div class="sub">${sub}</div></div>`;
+  const resumen = nG ? `<div class="test-sum">
+      ${tile(true ,"Error promedio porcentual · consumo total", pct(prom.mapeT), `Media de |real − pred.| ÷ real en ${quien}${vsDummy(prom.mapeT,prom.mapeTB,pct)}`)}
+      ${tile(false,"Error promedio · consumo total", absT(prom.maeT)+` <span style="font-size:14px">${UNIT}</span>`, `Media de |real − pred.| en ${quien}${vsDummy(prom.maeT,prom.maeTB,absT)}`)}
+      ${tile(true ,"Error promedio porcentual · por suscriptor", pct(prom.mapeS), `Consumo promedio por suscriptor${vsDummy(prom.mapeS,prom.mapeSB,pct)}`)}
+      ${tile(false,"Error promedio · por suscriptor", absS(prom.maeS)+` <span style="font-size:14px">${UNIT}</span>`, `Consumo promedio por suscriptor${vsDummy(prom.maeS,prom.maeSB,absS)}`)}
+    </div>` : "";
+  const fila=(nombre,sw,m,cls)=>`<tr class="${cls||""}"><td>${sw}${nombre}</td>
+      <td>${pct(m.mapeT)}</td>${conBase?`<td>${pct(m.mapeTB)}</td>`:""}<td>${absT(m.maeT)}</td>
+      <td>${pct(m.mapeS)}</td><td>${absS(m.maeS)}</td><td>${sgn(m.sesgo)}</td><td>${m.cob==null?"—":fmt(m.cob,0)+" %"}</td></tr>`;
+  const desdeM=m=>({mapeT:m.total.mape, mapeTB:m.total.mapeBase, maeT:m.total.mae, mapeS:m.avg.mape, maeS:m.avg.mae, sesgo:m.total.sesgo, cob:m.total.cob});
+  const sw=s=>`<span class="sw2" style="background:${s.color}"></span>`;
+  const filas = [
+    ...grupos.map(({s,m})=>fila(esc(s.name),sw(s),desdeM(m))),
+    nG>1 ? fila(`Promedio de los ${nG} grupos`,"",prom,"avg-row") : "",
+    ...ms.filter(x=>x.s.kind!=="cat").map(({s,m})=>fila(esc(s.name),sw(s),desdeM(m)))
+  ].join("");
+  box.classList.remove("hidden");
+  box.innerHTML=`<h2>Evaluación en test · ${monthLabel(DATA.tMin+fs,true)} – ${monthLabel(DATA.tMin+last,true)} (${last-fs+1} meses)</h2>
+    <p>Predicción hecha solo con los ${o-p0+1} meses del predictor (${monthLabel(DATA.tMin+p0)} – ${monthLabel(DATA.tMin+o)}) y comparada con lo observado mes a mes.
+    Error promedio porcentual = media de |real − predicho| ÷ real · Error promedio = media de |real − predicho| (${UNIT}).
+    Las tarjetas promedian solo los grupos seleccionados (no «Total general» ni «Otras»).</p>
+    ${resumen}
+    <div class="table-scroll" style="max-height:none;border:0"><table>
+    <thead><tr><th rowspan="2">Serie</th><th colspan="${conBase?3:2}" style="text-align:center">Consumo total</th><th colspan="2" style="text-align:center">Por suscriptor</th><th rowspan="2">Sesgo</th><th rowspan="2">Cob. 80 %</th></tr>
+      <tr><th>Error %</th>${conBase?"<th>Dummy %</th>":""}<th>Error (${UNIT})</th><th>Error %</th><th>Error (${UNIT})</th></tr></thead>
+    <tbody>${filas}</tbody></table></div>`;
+}
+
+/* ---------- Exportaciones ---------- */
+function download(name, blob){ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500); }
+
+function exportCsv() {
+  const series = [...CURRENT].sort((a, b) => new Intl.Collator("es", {numeric:true}).compare(a.name, b.name));
+  if (!series.length) return;
+
+  const originales = tableRows(CURRENT);
+  const indices = series.map(s => CURRENT.indexOf(s));
+  const filas = originales.map(r => ({...r, vals:indices.map(i => r.vals[i])}));
+
+  const meses = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const fecha = idx => `${Math.floor(idx/12)}/${meses[idx%12]}`;
+  const dias = idx => new Date(Date.UTC(Math.floor(idx/12), idx%12+1, 0)).getUTCDate();
+  const valido = v => v != null && Number.isFinite(Number(v));
+  const formato = (v, d=6) => valido(v) ? String(Number(Number(v).toFixed(d))).replace(".", ",") : "";
+  const csv = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const lines = [];
+
+  // Evitar duplicar "Total general" cuando ya se suman las categorías
+  const gruposResumen = series.map((s,i) => ({s,i})).filter(x => x.s.kind !== "all");
+  const generarResumen = gruposResumen.length > 1;
+
+  function valor(v, campo, idx) {
+    if (campo === "mr") return valido(v.ar) ? v.ar * dias(idx) : null;
+    if (campo === "mp") return valido(v.ap) ? v.ap * dias(idx) : null;
+    return v[campo];
+  }
+
+  function resumen(r, campo) {
+    const predicho = ["np","tp","ap","mp"].includes(campo);
+    const campoN = predicho ? "np" : "n";
+    const campoT = predicho ? "tp" : "tr";
+
+    if (campo === "ar" || campo === "ap" || campo === "mr" || campo === "mp") {
+      let total = 0, suscriptores = 0;
+
+      gruposResumen.forEach(({i}) => {
+        const v = r.vals[i], consumo = v[campoT], n = v[campoN];
+        if (valido(consumo) && valido(n) && Number(n) > 0) {
+          total += Number(consumo);
+          suscriptores += Number(n);
+        }
+      });
+
+      if (!suscriptores) return null;
+      const promedioDia = total / suscriptores;
+      return campo === "mr" || campo === "mp" ? promedioDia * dias(r.idx) : promedioDia;
+    }
+
+    let suma = 0, disponibles = 0;
+    gruposResumen.forEach(({i}) => {
+      const v = valor(r.vals[i], campo, r.idx);
+      if (valido(v)) { suma += Number(v); disponibles++; }
+    });
+    return disponibles ? suma : null;
+  }
+
+  function agregarTabla(titulo, campoReal, campoPred, decimales=6, etiquetaResumen="TOTAL") {
+    lines.push(csv(titulo));
+    lines.push(["GRUPO","TIPO",...filas.map(r => fecha(r.idx))].map(csv).join(";"));
+
+    series.forEach((s,i) => {
+      const historico = filas.map(r => valor(r.vals[i], campoReal, r.idx));
+      const predicho = filas.map(r => valor(r.vals[i], campoPred, r.idx));
+
+      if (historico.some(valido)) lines.push([s.name,"HISTORICO",...historico.map(v => formato(v,decimales))].map(csv).join(";"));
+      if (predicho.some(valido)) lines.push([s.name,"PREDICHO",...predicho.map(v => formato(v,decimales))].map(csv).join(";"));
+    });
+
+    if (generarResumen) {
+      const historico = filas.map(r => resumen(r,campoReal));
+      const predicho = filas.map(r => resumen(r,campoPred));
+
+      if (historico.some(valido)) lines.push([etiquetaResumen,"HISTORICO",...historico.map(v => formato(v,decimales))].map(csv).join(";"));
+      if (predicho.some(valido)) lines.push([etiquetaResumen,"PREDICHO",...predicho.map(v => formato(v,decimales))].map(csv).join(";"));
+    }
+
+    lines.push("");
+    lines.push("");
+  }
+
+  agregarTabla("CANTIDAD DE SUSCRIPTORES", "n", "np", 0, "TOTAL");
+  agregarTabla("CONSUMO TOTAL (m³/día)", "tr", "tp", 6, "TOTAL");
+  agregarTabla("CONSUMO DIA (m³/día por suscriptor)", "ar", "ap", 6, "PROMEDIO");
+  agregarTabla("CONSUMO MES (m³/mes por suscriptor)", "mr", "mp", 6, "PROMEDIO");
+
+  const g = GROUPS.find(g => g.key === state.group).label.replace(/\W+/g, "_");
+  const nombre = `consumo_${g}_${monthLabel(DATA.pMax).replace(" ","")}${FC.test ? `_test${FC.test}m` : ""}.csv`;
+  const contenido = lines.join("\r\n");
+
+  if (window.pywebview?.api?.guardar_csv) {
+    window.pywebview.api.guardar_csv(nombre, contenido).catch(e => alert("Error al guardar el CSV: " + e));
+  } else {
+    download(nombre, new Blob(["\uFEFF" + contenido], {type:"text/csv;charset=utf-8"}));
+  }
+}
+
+function exportGrafica(boxId, formato="png"){
+  const svg=$(boxId).querySelector("svg"); if(!svg) return;
+  const clone=svg.cloneNode(true); clone.setAttribute("xmlns", SVGNS);
+  const W=+svg.getAttribute("width"), H=+svg.getAttribute("height");
+  const titulo=boxId==="chartTotal"?"Consumo total por mes":"Consumo promedio por suscriptor";
+  const nombre=boxId==="chartTotal"?"consumo_total":"consumo_promedio";
+  const subtitulo=(CURRENT.map(s=>s.name).join(" · ")+(CURRENT.some(s=>s.fc)?` · predicción: ${FORECASTERS[FC.source].label}`:"")).slice(0,170);
+  const svgTexto=new XMLSerializer().serializeToString(clone);
+
+  if(formato==="pdf"){
+    if(!window.pywebview?.api?.guardar_pdf){ alert("La exportación PDF está disponible en la aplicación de Windows."); return; }
+    window.pywebview.api.guardar_pdf(nombre+".pdf",svgTexto,titulo+" ("+UNIT+")",subtitulo)
+      .catch(e=>alert("Error al guardar el PDF: "+e));
+    return;
+  }
+  const img=new Image();
+  img.onload=()=>{
+    const s=3, pad=50, c=document.createElement("canvas"); c.width=W*s; c.height=(H+pad)*s;
+    const ctx=c.getContext("2d"); ctx.scale(s,s); ctx.fillStyle="#fff"; ctx.fillRect(0,0,W,H+pad);
+    ctx.fillStyle="#0b3d7a"; ctx.font="700 16px Raleway, Arial, sans-serif"; ctx.fillText(titulo+" ("+UNIT+")",12,22);
+    ctx.fillStyle="#727272"; ctx.font="12px Open Sans, Arial, sans-serif"; ctx.fillText(subtitulo,12,40);
+    ctx.drawImage(img,0,pad,W,H);
+    if(window.pywebview?.api?.guardar_png){
+      window.pywebview.api.guardar_png(nombre+".png",c.toDataURL("image/png").split(",")[1])
+        .catch(e=>alert("Error al guardar el PNG: "+e));
+    }else{c.toBlob(b=>download(nombre+".png",b),"image/png");}
+  };
+  img.onerror=()=>alert("No se pudo preparar la gráfica PNG.");
+  img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svgTexto);
+}
+
+/* ---------- Eventos ---------- */
+const fi=$("fileInput");
+$("btnPick").onclick=()=>fi.click();
+$("btnReload").onclick=()=>fi.click();
+fi.onchange=()=>{ if(fi.files[0]) loadFile(fi.files[0]); fi.value=""; };
+const dz=$("dropzone");
+["dragenter","dragover"].forEach(ev=>document.addEventListener(ev,e=>{e.preventDefault(); dz.classList.add("over");}));
+["dragleave","drop"].forEach(ev=>document.addEventListener(ev,e=>{e.preventDefault(); if(ev==="drop"||e.target===dz) dz.classList.remove("over");}));
+document.addEventListener("drop",e=>{ const f=e.dataTransfer.files[0]; if(f) loadFile(f); });
+
+document.querySelectorAll(".zoom-ctl").forEach(c=>c.addEventListener("click",e=>{
+  const b=e.target.closest("button[data-z]"); if(!b||!DATA) return;
+  const id=c.dataset.chart, d=DOM[id]; if(!d) return;
+  const cen=(d.yMin+d.yMax)/2, half=(d.yMax-d.yMin)/2;
+  if (b.dataset.z==="in")  fijarZoom(id, cen-half/1.5, cen+half/1.5);
+  if (b.dataset.z==="out") fijarZoom(id, cen-half*1.5, cen+half*1.5);
+  if (b.dataset.z==="fit"){ YZ[id]=null; FIT[id]=!FIT[id]; redibujar(id); }
+  if (b.dataset.z==="reset") restablecerZoom(id);
+}));
+$("groupSeg").onclick=e=>{ const b=e.target.closest("button[data-g]"); if(!b||b.disabled) return; YZ.chartTotal=YZ.chartAvg=null; state.group=b.dataset.g; state.search=""; $("catSearch").value=""; renderGroupSeg(); renderAll(); };
+$("catList").onchange=e=>{ const c=+e.target.dataset.c; if(e.target.checked) addSel(state.group,c); else removeSel(state.group,c); renderAll(); };
+$("legend").onclick=e=>{ const b=e.target.closest("button[data-rm]"); if(!b) return; removeSel(state.group,+b.dataset.rm); renderAll(); };
+$("catSearch").oninput=e=>{ state.search=e.target.value; renderCats(); };
+$("catSort").onchange=e=>{ state.sort=e.target.value; renderCats(); };
+$("btnNone").onclick=()=>{ state.sel[state.group]=[]; state.slots[state.group]={}; renderAll(); };
+$("btnTop").onclick=()=>{ state.sel[state.group]=[]; state.slots[state.group]={}; state.init[state.group]=false; defaultSel(state.group); renderAll(); };
+$("chkAll").onchange=e=>{ state.showAll=e.target.checked; renderAll(); };
+$("chkOther").onchange=e=>{ state.showOther=e.target.checked; renderAll(); };
+$("btnCsv").onclick=e=>{ e.preventDefault(); e.stopPropagation(); exportCsv(); };
+$("fcOn").onchange=e=>{ FC.on=e.target.checked; renderAll(); };
+$("fcH").onchange=e=>{ FC.h=+e.target.value; renderAll(); };
+$("fcTest").onchange=e=>{ FC.test=+e.target.value; renderTestOptions(); renderKpis(); renderAll(); };
+$("fcBand").onchange=e=>{ FC.band=e.target.checked; drawChart("chartTotal",CURRENT,"total"); drawChart("chartAvg",CURRENT,"avg"); };
+$("fcSrc").onchange=e=>{ FC.source=e.target.value; renderFcSources(); renderAll(); };
+$("fcUrl").onchange=e=>{ FC.url=e.target.value.trim(); if(!FORECASTERS[FC.source].dummy) renderAll(); };
+document.querySelectorAll("[data-png]").forEach(b=>b.onclick=()=>exportGrafica(b.dataset.png,"png"));
+document.querySelectorAll("[data-pdf]").forEach(b=>b.onclick=()=>exportGrafica(b.dataset.pdf,"pdf"));
+let rz; window.addEventListener("resize",()=>{ clearTimeout(rz); rz=setTimeout(()=>{ if(DATA && !$("dash").classList.contains("hidden")){ drawChart("chartTotal",CURRENT,"total"); drawChart("chartAvg",CURRENT,"avg"); } },150); });
+</script>
+</body>
+</html>
